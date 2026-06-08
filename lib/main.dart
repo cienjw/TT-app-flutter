@@ -119,14 +119,27 @@ class LoginScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 32),
               
-              // 개발용 로그인 (임시)
-              TextButton(
+              // 개발용 로그인 (임시) - 훨씬 더 잘 보이게 수정
+              const SizedBox(height: 16),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[800],
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 52),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: isLoading
                     ? null
                     : () => handleLogin(() =>
                     ref.read(authProvider.notifier).loginWithDev('테스트유저')),
-                child: const Text('개발용 로그인 (키 해시 오류 시 사용)',
-                    style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline)),
+                child: const Text('개발용 로그인 (테스트용)',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 8.0),
+                child: Text('※ 키 해시 에러 발생 시 위 버튼을 클릭하세요.',
+                    style: TextStyle(color: Colors.red, fontSize: 12)),
               ),
             ],
           ),
