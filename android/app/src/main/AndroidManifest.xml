@@ -19,16 +19,17 @@
     <application
         android:label="tt_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
 
         <!-- 카카오 앱 키 -->
         <meta-data
             android:name="com.kakao.sdk.AppKey"
-            android:value="275c5da62c31c4b9d7ac0f5f2142154c"/>
+            android:value="9bfd88d5e14c0de724064983944035f8"/>
 
         <!-- 카카오 로그인 Activity -->
         <activity
-            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -36,7 +37,7 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:host="oauth"
-                    android:scheme="kakao275c5da62c31c4b9d7ac0f5f2142154c"/>
+                    android:scheme="kakao9bfd88d5e14c0de724064983944035f8"/>
             </intent-filter>
         </activity>
 
