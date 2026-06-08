@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'features/auth/domain/auth_provider.dart';
+import 'features/onboarding/presentation/pages/terms_screen.dart';
+import 'features/main/presentation/pages/main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,11 +39,17 @@ class LoginScreen extends ConsumerWidget {
       try {
         final isNewUser = await loginFn();
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isNewUser ? '환영합니다! 관심사를 설정해주세요.' : '로그인 성공!'),
-          ),
-        );
+        if (isNewUser) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const TermsScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
 
       } catch (e) {
         if (!context.mounted) return;
