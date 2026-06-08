@@ -35,22 +35,29 @@ class LoginScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
+    // handleLogin에서 push를 수행하되, 만약 authState가 변경되어 리빌드될 때를 대비해
+    // 별도의 리스너나 로직을 보강할 수 있습니다. 
+    // 여기서는 handleLogin 내부 로직을 더 명확히 합니다.
+
     Future<void> handleLogin(Future<bool> Function() loginFn) async {
       try {
+        // loginFn()은 auth_provider의 loginWithKakao/Google을 호출하며
+        // 내부적으로 state = AsyncData(true)를 설정하고 isNewUser를 반환합니다.
         final isNewUser = await loginFn();
+        
         if (!context.mounted) return;
+
         if (isNewUser) {
-          Navigator.pushReplacement(
-            context,
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const TermsScreen()),
+            (route) => false,
           );
         } else {
-          Navigator.pushReplacement(
-            context,
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
           );
         }
-
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
