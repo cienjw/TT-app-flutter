@@ -54,6 +54,21 @@ class AuthNotifier extends AsyncNotifier<bool> {
       rethrow;
     }
   }
+
+  Future<bool> loginWithDev(String nickname) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(authRepoProvider);
+      final result = await repo.loginWithDev(nickname);
+      await repo.saveTokens(result.accessToken, result.refreshToken);
+
+      state = const AsyncData(true);
+      return result.isNewUser;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
 }
 
 final authProvider =

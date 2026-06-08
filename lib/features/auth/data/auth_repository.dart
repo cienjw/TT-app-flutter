@@ -34,4 +34,17 @@ class AuthRepository {
       refreshToken: refresh,
     );
   }
+
+  Future<({String accessToken, String refreshToken, bool isNewUser, int userId})>
+  loginWithDev(String nickname) async {
+    final res = await ApiClient.dio.post('/api/auth/dev-login', data: {
+      'nickname': nickname,
+    });
+    return (
+    accessToken:  res.data['accessToken']  as String,
+    refreshToken: res.data['refreshToken'] as String,
+    isNewUser:    res.data['isNewUser'] ?? false,
+    userId:       res.data['userId']        as int,
+    );
+  }
 }

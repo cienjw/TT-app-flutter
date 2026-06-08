@@ -117,6 +117,17 @@ class LoginScreen extends ConsumerWidget {
                 child: const Text('Google로 시작하기',
                     style: TextStyle(fontSize: 16)),
               ),
+              const SizedBox(height: 32),
+              
+              // 개발용 로그인 (임시)
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () => handleLogin(() =>
+                    ref.read(authProvider.notifier).loginWithDev('테스트유저')),
+                child: const Text('개발용 로그인 (키 해시 오류 시 사용)',
+                    style: TextStyle(color: Colors.grey, decoration: TextDecoration.underline)),
+              ),
             ],
           ),
         ),
