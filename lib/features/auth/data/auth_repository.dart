@@ -43,7 +43,7 @@ class AuthRepository {
     return (
     accessToken:  res.data['accessToken']  as String,
     refreshToken: res.data['refreshToken'] as String,
-    isNewUser:    res.data['isNewUser'] ?? false,
+    isNewUser:    (res.data['isNewUser'] ?? false) as bool,
     userId:       res.data['userId']        as int,
     );
   }
