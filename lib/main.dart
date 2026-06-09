@@ -6,5 +6,5 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   KakaoSdk.init(nativeAppKey: '9bfd88d5e14c0de724064983944035f8');
-  runApp(const ProviderScope(child: TtApp()));
+  runApp(const ProviderScope(child: MeetoryApp()));
 }

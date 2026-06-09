@@ -22,4 +22,12 @@ class SecureStorage {
   static Future<void> clearAll() async {
     await _storage.deleteAll();
   }
+  static Future<void> setOnboardingComplete() async {
+    await _storage.write(key: 'onboarding_complete', value: 'true');
+  }
+
+  static Future<bool> isOnboardingComplete() async {
+    return await _storage.read(key: 'onboarding_complete') == 'true';
+  }
 }
+
