@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/storage/secure_storage.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/auth/presentation/terms_screen.dart';
 import 'features/main/presentation/main_screen.dart';
 
 class MeetoryApp extends StatelessWidget {

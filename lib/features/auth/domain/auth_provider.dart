@@ -13,10 +13,18 @@ class AuthNotifier extends AsyncNotifier<bool> {
   Future<bool> loginWithKakao() async {
     state = const AsyncLoading();
     try {
-      // 에뮬레이터는 KakaoTalk 앱이 없으므로 웹 로그인으로 폴백됨
-      final OAuthToken token = await isKakaoTalkInstalled()
-          ? await UserApi.instance.loginWithKakaoTalk()
-          : await UserApi.instance.loginWithKakaoAccount();
+      OAuthToken token;
+      // 카카오톡 앱으로 시도 → 실패하면 카카오 계정(웹)으로 폴백
+      if (await isKakaoTalkInstalled()) {
+        try {
+          token = await UserApi.instance.loginWithKakaoTalk();
+        } catch (e) {
+          // 카카오톡은 있지만 로그인 안 된 경우 등 → 웹 로그인으로
+          token = await UserApi.instance.loginWithKakaoAccount();
+        }
+      } else {
+        token = await UserApi.instance.loginWithKakaoAccount();
+      }
 
       final repo = ref.read(authRepoProvider);
       final result = await repo.loginWithKakao(token.accessToken);

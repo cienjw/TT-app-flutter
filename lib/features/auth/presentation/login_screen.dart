@@ -4,7 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../domain/auth_provider.dart';
-import '../../matching/presentation/home_screen.dart';
+import '../../main/presentation/main_screen.dart';
 import 'terms_screen.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -22,7 +22,7 @@ class LoginScreen extends ConsumerWidget {
           context,
           MaterialPageRoute(
             builder: (_) =>
-            isNewUser ? const TermsScreen() : const MainScreen(),
+            isNewUser ? const TermsScreen() : MainScreen(),
           ),
         );
       } catch (e) {
