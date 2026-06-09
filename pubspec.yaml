@@ -23,6 +23,8 @@ dependencies:
   kakao_flutter_sdk_user: ^1.9.1
   google_sign_in: ^6.2.1
 
+  jwt_decoder: ^2.0.1
+
   # 보안 저장소 (JWT)
   flutter_secure_storage: ^9.2.2
 

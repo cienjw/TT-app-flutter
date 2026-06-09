@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../domain/chat_provider.dart';
 import '../data/group_repository.dart';
+import 'chat_room_screen.dart';
 
 class ChatroomsScreen extends ConsumerStatefulWidget {
   const ChatroomsScreen({super.key});
@@ -150,40 +151,52 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Widget _buildRoomCard(GroupSummary group) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.surfaceVariant),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatRoomScreen(
+            groupId: group.id,
+            groupName: group.name,
+            memberCount: group.memberCount,
+          ),
+        ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.groups, color: AppColors.primary),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${group.name} (${group.memberCount}명)',
-                    style: AppTextStyles.title),
-                const SizedBox(height: 4),
-                Text(
-                  group.lastMessage ?? '아직 대화가 없어요',
-                  style: AppTextStyles.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.surfaceVariant),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: AppColors.primaryLight,
+              child: Icon(Icons.groups, color: AppColors.primary),
             ),
-          ),
-          Icon(Icons.chevron_right, color: AppColors.textHint),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${group.name} (${group.memberCount}명)',
+                      style: AppTextStyles.title),
+                  const SizedBox(height: 4),
+                  Text(
+                    group.lastMessage ?? '아직 대화가 없어요',
+                    style: AppTextStyles.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.textHint),
+          ],
+        ),
       ),
     );
   }
