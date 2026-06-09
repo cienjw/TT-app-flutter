@@ -56,71 +56,75 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 60),
-              Text('닉네임을\n입력해주세요', style: AppTextStyles.headline1),
-              const SizedBox(height: 32),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.vertical,
+            ),
+            child: IntrinsicHeight(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 60),
+                  Text('닉네임을\n입력해주세요', style: AppTextStyles.headline1),
+                  const SizedBox(height: 32),
 
-              // 닉네임 입력
-              TextField(
-                controller: _controller,
-                onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: '예) pododang_dodang',
-                ),
-                maxLength: 20,
-              ),
-              const SizedBox(height: 40),
-
-              // 기본 프로필 사진 선택
-              Text('기본 프로필 사진을 선택해주세요',
-                  style: AppTextStyles.title),
-              const SizedBox(height: 20),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(3, (i) {
-                  final avatar = _avatars[i];
-                  final selected = _selectedAvatar == i;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedAvatar = i),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: selected
-                            ? Border.all(color: AppColors.primary, width: 3)
-                            : null,
-                      ),
-                      child: CircleAvatar(
-                        radius: 36,
-                        backgroundColor: avatar.color,
-                        child: Icon(avatar.icon,
-                            color: Colors.white, size: 32),
-                      ),
+                  TextField(
+                    controller: _controller,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: '예) pododang_dodang',
                     ),
-                  );
-                }),
-              ),
+                    maxLength: 20,
+                  ),
+                  const SizedBox(height: 40),
 
-              const Spacer(),
+                  Text('기본 프로필 사진을 선택해주세요', style: AppTextStyles.title),
+                  const SizedBox(height: 20),
 
-              AppButton(
-                label: '다음',
-                isLoading: _isLoading,
-                onPressed: _canProceed ? _next : null,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(3, (i) {
+                      final avatar = _avatars[i];
+                      final selected = _selectedAvatar == i;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedAvatar = i),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: selected
+                                ? Border.all(color: AppColors.primary, width: 3)
+                                : null,
+                          ),
+                          child: CircleAvatar(
+                            radius: 36,
+                            backgroundColor: avatar.color,
+                            child: Icon(avatar.icon,
+                                color: Colors.white, size: 32),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+
+                  const Spacer(),
+
+                  AppButton(
+                    label: '다음',
+                    isLoading: _isLoading,
+                    onPressed: _canProceed ? _next : null,
+                  ),
+                  const SizedBox(height: 32),
+                ],
               ),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),
