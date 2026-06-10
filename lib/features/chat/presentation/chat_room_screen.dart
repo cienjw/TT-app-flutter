@@ -44,7 +44,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final token = await SecureStorage.getAccessToken();
     if (token != null) {
       final decoded = JwtDecoder.decode(token);
-      _myUserId = decoded['userId'] as int?;
+      final raw = decoded['userId'];
+      // int든 double이든 String이든 안전하게 int로 변환
+      _myUserId = switch (raw) {
+        int v => v,
+        double v => v.toInt(),
+        String v => int.tryParse(v),
+        _ => null,
+      };
+      debugPrint('### my userId from JWT: $_myUserId');  // 디버깅용
     }
 
     // 2. 과거 메시지 로드

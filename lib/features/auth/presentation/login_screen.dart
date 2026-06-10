@@ -8,6 +8,7 @@ import '../../main/presentation/main_screen.dart';
 import 'terms_screen.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../profile/domain/profile_provider.dart';
+import '../../../core/network/socket_client.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -20,6 +21,9 @@ class LoginScreen extends ConsumerWidget {
       try {
         final isNewUser = await loginFn();
         if (!context.mounted) return;
+
+        // 이전 계정의 소켓 연결 강제 종료 (새 토큰으로 재연결되도록)
+        SocketClient.disconnect();
 
         // 이전 계정의 캐시 무효화 (새 토큰 저장 후이므로 안전)
         ref.invalidate(myProfileProvider);
