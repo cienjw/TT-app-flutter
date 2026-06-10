@@ -8,16 +8,24 @@ class SocketClient {
 
   // 소켓 연결 (토큰 필요)
   static Future<io.Socket> connect() async {
+    // 살아있는 소켓은 재사용
     if (_socket != null && _socket!.connected) return _socket!;
 
+    // 끊긴 소켓 잔재가 있으면 완전히 정리
+    disconnect();
+
     final token = await SecureStorage.getAccessToken();
+    if (token == null) {
+      throw Exception('토큰이 없습니다. 다시 로그인해주세요.');
+    }
 
     _socket = io.io(
       _baseUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])   // 웹소켓만 사용
-          .disableAutoConnect()           // 수동 연결
-          .setAuth({'token': token})      // JWT를 handshake.auth로 전달
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .enableForceNew()              // ★ 핵심: 패키지 내부 캐시 무시, 항상 새 소켓 생성
+          .setAuth({'token': token})
           .build(),
     );
 
