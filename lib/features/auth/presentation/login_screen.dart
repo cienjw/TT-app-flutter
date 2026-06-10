@@ -6,6 +6,8 @@ import '../../../shared/widgets/app_button.dart';
 import '../domain/auth_provider.dart';
 import '../../main/presentation/main_screen.dart';
 import 'terms_screen.dart';
+import '../../chat/domain/chat_provider.dart';
+import '../../profile/domain/profile_provider.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -18,6 +20,11 @@ class LoginScreen extends ConsumerWidget {
       try {
         final isNewUser = await loginFn();
         if (!context.mounted) return;
+
+        // 이전 계정의 캐시 무효화 (새 토큰 저장 후이므로 안전)
+        ref.invalidate(myProfileProvider);
+        ref.invalidate(myGroupsProvider);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
