@@ -131,7 +131,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                       BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
-                  child: const Icon(CupertinoIcons.location_fill,
+                  child: const Icon(Icons.my_location,
                       color: AppColors.primary, size: 22),
                 ),
               ),

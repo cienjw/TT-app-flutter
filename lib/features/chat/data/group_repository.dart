@@ -32,8 +32,10 @@ class GroupRepository {
         .toList();
   }
 
-  Future<int> joinMatching() async {
-    final res = await ApiClient.dio.post('/api/matching/join');
+  Future<int> joinMatching({double threshold = 0.7}) async {
+    final res = await ApiClient.dio.post('/api/matching/join', data: {
+      'threshold': threshold,
+    });
     return res.data['groupId'] as int;
   }
 }

@@ -51,6 +51,17 @@ class AppTheme {
       ),
     ),
 
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: AppColors.surface,
+      indicatorColor: Colors.transparent, // ← 선택 시 알약 제거
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? AppColors.primary : AppColors.textHint,
+        );
+      }),
+    ),
+
     cardTheme: CardThemeData(
       elevation: 0,
       color: AppColors.surface,

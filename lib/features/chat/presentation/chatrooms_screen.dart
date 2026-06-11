@@ -17,11 +17,12 @@ class ChatroomsScreen extends ConsumerStatefulWidget {
 class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _bluetoothOn = false;
   bool _isMatching = false;
+  double _matchThreshold = 0.85;
 
   Future<void> _runMatching() async {
     setState(() => _isMatching = true);
     try {
-      await ref.read(groupRepoProvider).joinMatching();
+      await ref.read(groupRepoProvider).joinMatching(threshold: _matchThreshold);
       // 목록 새로고침
       ref.invalidate(myGroupsProvider);
       if (!mounted) return;
@@ -55,8 +56,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           children: [
-            _buildBluetoothToggle(),
-            const SizedBox(height: 16),
             _buildMatchingCard(),
             const SizedBox(height: 24),
 
@@ -84,58 +83,100 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildBluetoothToggle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.surfaceVariant),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.bluetooth,
-              color: _bluetoothOn ? AppColors.primary : AppColors.textHint),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('블루투스 연결 상태', style: AppTextStyles.title),
-                const SizedBox(height: 2),
-                Text('주변에 관심사 맞는 사람이 있으면 알림이 울려요',
-                    style: AppTextStyles.caption),
-              ],
-            ),
-          ),
-          Switch(
-            value: _bluetoothOn,
-            activeColor: AppColors.primary,
-            onChanged: (v) => setState(() => _bluetoothOn = v),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMatchingCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('채팅방 매칭', style: AppTextStyles.title),
           const SizedBox(height: 4),
-          Text('마음에 맞는 친구들을 찾아볼까요?',
-              style: AppTextStyles.caption),
-          const SizedBox(height: 16),
+          Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
+          const SizedBox(height: 18),
+
+          // 블루투스 토글 (통합)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.bluetooth,
+                    size: 22,
+                    color: _bluetoothOn
+                        ? AppColors.primary
+                        : AppColors.textHint),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('주변 탐색',
+                          style: AppTextStyles.body
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      Text('가까이 있는 사람을 우선 찾아요',
+                          style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _bluetoothOn,
+                  activeColor: AppColors.primary,
+                  onChanged: (v) => setState(() => _bluetoothOn = v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // 관심사 일치도 슬라이더
+          Row(
+            children: [
+              Text('관심사 일치도',
+                  style: AppTextStyles.body
+                      .copyWith(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Text('${(_matchThreshold * 100).round()}% 이상',
+                  style: AppTextStyles.body.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w700)),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              activeTrackColor: AppColors.primary,
+              inactiveTrackColor: AppColors.surface,
+              thumbColor: AppColors.primary,
+              overlayColor: AppColors.primary.withOpacity(0.15),
+            ),
+            child: Slider(
+              value: _matchThreshold,
+              min: 0.5,
+              max: 1.0,
+              divisions: 10, // 5% 단위
+              onChanged: (v) => setState(() => _matchThreshold = v),
+            ),
+          ),
+          Text(
+            _matchThreshold >= 0.99
+                ? '나와 완벽히 일치하는 사람만 기다려요'
+                : '관심사가 ${(_matchThreshold * 100).round()}% 이상 맞는 사람과 연결돼요',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: 20),
+
+          // 매칭 버튼 (카드 전체 너비)
           SizedBox(
-            width: 160,
-            height: 44,
+            width: double.infinity,
+            height: 48,
             child: FilledButton(
               onPressed: _isMatching ? null : _runMatching,
               child: _isMatching
