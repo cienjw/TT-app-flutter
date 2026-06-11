@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -106,7 +107,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                     ),
                     child: Transform.rotate(
                       angle: -_bearing * math.pi / 180,
-                      child: const Icon(Icons.navigation,
+                      child: const Icon(CupertinoIcons.location_north_fill,
                           color: AppColors.secondary, size: 24),
                     ),
                   ),
@@ -130,7 +131,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                       BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
-                  child: const Icon(Icons.my_location,
+                  child: const Icon(CupertinoIcons.location_fill,
                       color: AppColors.primary, size: 22),
                 ),
               ),
@@ -330,7 +331,7 @@ class _FootprintCard extends StatelessWidget {
               height: 44,
               decoration: const BoxDecoration(
                   color: AppColors.primaryLight, shape: BoxShape.circle),
-              child: const Icon(Icons.place, color: AppColors.primary),
+              child: const Icon(CupertinoIcons.placemark_fill, color: AppColors.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -348,7 +349,7 @@ class _FootprintCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.textHint),
+            const Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
           ],
         ),
       ),
@@ -388,7 +389,7 @@ class _FootprintDetailSheet extends StatelessWidget {
                   height: 48,
                   decoration: const BoxDecoration(
                       color: AppColors.primaryLight, shape: BoxShape.circle),
-                  child: const Icon(Icons.groups, color: AppColors.primary),
+                  child: const Icon(CupertinoIcons.person_3_fill, color: AppColors.primary),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

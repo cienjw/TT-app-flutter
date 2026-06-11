@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -100,7 +101,7 @@ class _TermsItem extends StatelessWidget {
             Expanded(
               child: Text(label, style: AppTextStyles.body),
             ),
-            Icon(Icons.chevron_right,
+            Icon(CupertinoIcons.chevron_right,
                 color: AppColors.textSecondary, size: 20),
           ],
         ),

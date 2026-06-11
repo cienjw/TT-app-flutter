@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../footprints/presentation/footprints_screen.dart';
 import '../../chat/presentation/chatrooms_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
@@ -29,18 +30,18 @@ class _MainScreenState extends State<MainScreen> {
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
+            icon: Icon(CupertinoIcons.map),
+            selectedIcon: Icon(CupertinoIcons.map_fill),
             label: '발자취',
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline),
-            selectedIcon: Icon(Icons.chat_bubble),
+            icon: Icon(CupertinoIcons.chat_bubble),
+            selectedIcon: Icon(CupertinoIcons.chat_bubble_fill),
             label: '채팅방',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(CupertinoIcons.person),
+            selectedIcon: Icon(CupertinoIcons.person_fill),
             label: '프로필',
           ),
         ],

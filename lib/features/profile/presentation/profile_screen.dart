@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -68,28 +69,28 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             const Divider(height: 1),
             _MenuTile(
-              icon: Icons.edit_outlined,
+              icon: CupertinoIcons.pencil,
               label: '내 정보 수정',
               onTap: () {}, // 추후 구현
             ),
             _MenuTile(
-              icon: Icons.notifications_outlined,
+              icon: CupertinoIcons.bell,
               label: '알림 설정',
               onTap: () {},
             ),
             _MenuTile(
-              icon: Icons.block_outlined,
+              icon: CupertinoIcons.nosign,
               label: '차단한 사용자',
               onTap: () {},
             ),
             _MenuTile(
-              icon: Icons.help_outline,
+              icon: CupertinoIcons.question_circle,
               label: '이용 가이드',
               onTap: () {},
             ),
             const Divider(height: 1),
             _MenuTile(
-              icon: Icons.logout,
+              icon: CupertinoIcons.square_arrow_right,
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
@@ -116,7 +117,7 @@ class ProfileScreen extends ConsumerWidget {
           CircleAvatar(
             radius: 36,
             backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.person, size: 40, color: AppColors.primary),
+            child: Icon(CupertinoIcons.person_fill, size: 40, color: AppColors.primary),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -163,7 +164,7 @@ class _MenuTile extends StatelessWidget {
       title: Text(label, style: AppTextStyles.body.copyWith(color: color)),
       trailing: isDestructive
           ? null
-          : Icon(Icons.chevron_right, color: AppColors.textHint),
+          : Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
       onTap: onTap,
     );
   }

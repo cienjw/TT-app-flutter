@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -46,7 +47,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         title: const Text('채팅방'),
         titleTextStyle: AppTextStyles.headline2,
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+          IconButton(icon: const Icon(CupertinoIcons.search), onPressed: () {}),
         ],
       ),
       body: RefreshIndicator(
@@ -175,7 +176,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             CircleAvatar(
               radius: 26,
               backgroundColor: AppColors.primaryLight,
-              child: Icon(Icons.groups, color: AppColors.primary),
+              child: Icon(CupertinoIcons.person_3_fill, color: AppColors.primary),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -194,7 +195,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textHint),
+            Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
           ],
         ),
       ),

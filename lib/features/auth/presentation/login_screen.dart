@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -69,7 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(Icons.people_alt_rounded,
+                child: const Icon(CupertinoIcons.person_2_fill,
                     color: Colors.white, size: 30),
               ),
               const SizedBox(height: 28),

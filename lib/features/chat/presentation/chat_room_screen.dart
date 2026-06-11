@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -164,7 +165,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             const SizedBox(width: 8),
             IconButton.filled(
               onPressed: _sendMessage,
-              icon: const Icon(Icons.send),
+              icon: const Icon(CupertinoIcons.paperplane_fill),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary,
               ),
@@ -195,7 +196,7 @@ class _MessageBubble extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.primaryLight,
-              child: Icon(Icons.person, size: 18, color: AppColors.primary),
+              child: Icon(CupertinoIcons.person_fill, size: 18, color: AppColors.primary),
             ),
             const SizedBox(width: 8),
           ],

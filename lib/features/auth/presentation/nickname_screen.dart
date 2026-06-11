@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
@@ -20,9 +21,9 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
 
   // 프리셋 아바타 3종 (색상 + 아이콘)
   static const _avatars = [
-    (color: Color(0xFFB39DDB), icon: Icons.sentiment_satisfied_alt_rounded),
-    (color: Color(0xFF80CBC4), icon: Icons.sentiment_very_satisfied_rounded),
-    (color: Color(0xFFFFCC80), icon: Icons.mood_rounded),
+    (color: Color(0xFFB39DDB), icon: CupertinoIcons.smiley),
+    (color: Color(0xFF80CBC4), icon: CupertinoIcons.smiley_fill),
+    (color: Color(0xFFFFCC80), icon: CupertinoIcons.star_fill),
   ];
 
   bool get _canProceed =>
