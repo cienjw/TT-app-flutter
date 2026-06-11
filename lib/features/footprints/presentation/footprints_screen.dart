@@ -151,15 +151,23 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       }
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) return;
+
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      final myLatLng = NLatLng(pos.latitude, pos.longitude);
+
+      // 내 위치 파란 점 표시 (위치 오버레이는 기본 숨김이라 setIsVisible(true) 필수)
+      final locationOverlay = await controller.getLocationOverlay();
+      locationOverlay.setPosition(myLatLng);
+      locationOverlay.setIsVisible(true);
+
+      // 카메라를 내 위치로 이동
       controller.updateCamera(
-        NCameraUpdate.withParams(
-          target: NLatLng(pos.latitude, pos.longitude),
-        )..setAnimation(
-            animation: NCameraAnimation.easing,
-            duration: const Duration(milliseconds: 500)),
+        NCameraUpdate.withParams(target: myLatLng)
+          ..setAnimation(
+              animation: NCameraAnimation.easing,
+              duration: const Duration(milliseconds: 500)),
       );
     } catch (_) {}
   }
