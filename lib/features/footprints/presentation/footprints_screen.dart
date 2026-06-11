@@ -114,16 +114,25 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
               ),
 
             // 내 위치 버튼: 시트 바로 위에 붙어 따라다님
+            // 내 위치 버튼: 나침반과 동일한 원형 디자인
             Positioned(
               right: 16,
               bottom: myLocBottom,
-              child: FloatingActionButton.small(
-                heroTag: 'myloc',
-                backgroundColor: AppColors.surface,
-                foregroundColor: AppColors.primary,
-                elevation: 2,
-                onPressed: _goToMyLocation,
-                child: const Icon(Icons.my_location),
+              child: GestureDetector(
+                onTap: _goToMyLocation,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ],
+                  ),
+                  child: const Icon(Icons.my_location,
+                      color: AppColors.primary, size: 22),
+                ),
               ),
             ),
 
@@ -152,24 +161,34 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) return;
 
+      // ① 캐시된 마지막 위치로 즉시 이동 (딜레이 거의 0)
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) {
+        _moveCameraTo(controller, NLatLng(last.latitude, last.longitude));
+      }
+
+      // ② 정확한 현재 위치로 보정
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.medium, // high → medium (더 빠름)
+        timeLimit: const Duration(seconds: 5),
       );
       final myLatLng = NLatLng(pos.latitude, pos.longitude);
+      _moveCameraTo(controller, myLatLng);
 
-      // 내 위치 파란 점 표시 (위치 오버레이는 기본 숨김이라 setIsVisible(true) 필수)
-      final locationOverlay = await controller.getLocationOverlay();
-      locationOverlay.setPosition(myLatLng);
-      locationOverlay.setIsVisible(true);
-
-      // 카메라를 내 위치로 이동
-      controller.updateCamera(
-        NCameraUpdate.withParams(target: myLatLng)
-          ..setAnimation(
-              animation: NCameraAnimation.easing,
-              duration: const Duration(milliseconds: 500)),
-      );
+      // 내 위치 파란 점
+      final lo = await controller.getLocationOverlay();
+      lo.setPosition(myLatLng);
+      lo.setIsVisible(true);
     } catch (_) {}
+  }
+
+  void _moveCameraTo(NaverMapController controller, NLatLng target) {
+    controller.updateCamera(
+      NCameraUpdate.withParams(target: target)
+        ..setAnimation(
+            animation: NCameraAnimation.easing,
+            duration: const Duration(milliseconds: 400)),
+    );
   }
 
   Future<void> _updateBearing() async {
@@ -183,11 +202,13 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
 
   Future<void> _syncMarkers(List<Footprint> footprints) async {
     final controller = _controller;
-    if (controller == null || _markersSynced) return;
-    _markersSynced = true;
+    if (controller == null) return;
+    // _markersSynced 플래그 검사 제거, 대신 기존 마커 클리어 ✅
+    controller.clearOverlays(type: NOverlayType.marker);
+
     for (final f in footprints) {
       final marker = NMarker(
-        id: 'fp_${f.groupId}',
+        id: 'fp_${f.groupId}', // 키가 같으면 덮어씌워지긴 함
         position: NLatLng(f.latitude, f.longitude),
         caption: NOverlayCaption(text: '${f.attendeeCount}명'),
       );

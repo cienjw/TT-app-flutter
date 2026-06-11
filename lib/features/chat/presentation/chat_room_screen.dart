@@ -72,11 +72,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _socket!.emit('join_room', widget.groupId);
 
     // 4. 새 메시지 수신 리스너
-    _socket!.on('new_message', (data) {
-      final msg = Message.fromJson(Map<String, dynamic>.from(data));
-      setState(() => _messages.add(msg));
-      _scrollToBottom();
-    });
+    _socket!.on('new_message', _onNewMessage);
   }
 
   void _scrollToBottom() {
@@ -101,10 +97,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _textController.clear();
   }
 
+  // 1. 핸들러를 별도 함수로 분리
+  void _onNewMessage(dynamic data) {
+    final msg = Message.fromJson(Map<String, dynamic>.from(data));
+    setState(() => _messages.add(msg));
+    _scrollToBottom();
+  }
+
   @override
   void dispose() {
     _socket?.emit('leave_room', widget.groupId);
-    _socket?.off('new_message');
+    _socket?.off('new_message', _onNewMessage);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();

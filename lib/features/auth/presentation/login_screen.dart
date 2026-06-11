@@ -10,41 +10,49 @@ import '../../chat/domain/chat_provider.dart';
 import '../../profile/domain/profile_provider.dart';
 import '../../../core/network/socket_client.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authProvider).isLoading;
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
 
-    Future<void> handleLogin(Future<bool> Function() loginFn) async {
-      try {
-        final isNewUser = await loginFn();
-        if (!context.mounted) return;
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  String? _loading; // 'kakao' | 'google' | null
 
-        // 이전 계정의 소켓 연결 강제 종료 (새 토큰으로 재연결되도록)
-        SocketClient.disconnect();
+  Future<void> _handleLogin(
+      String provider, Future<bool> Function() loginFn) async {
+    setState(() => _loading = provider);
+    try {
+      final isNewUser = await loginFn();
+      if (!mounted) return;
 
-        // 이전 계정의 캐시 무효화 (새 토큰 저장 후이므로 안전)
-        ref.invalidate(myProfileProvider);
-        ref.invalidate(myGroupsProvider);
+      // 이전 계정의 소켓 연결 강제 종료 (새 토큰으로 재연결되도록)
+      SocketClient.disconnect();
+      // 이전 계정의 캐시 무효화
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(myGroupsProvider);
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-            isNewUser ? const TermsScreen() : MainScreen(),
-          ),
-        );
-      } catch (e) {
-        if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('로그인 실패: $e'),
-              backgroundColor: AppColors.error),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => isNewUser ? const TermsScreen() : MainScreen(),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = null); // 실패 시 로딩 해제
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('로그인 실패: $e'),
+            backgroundColor: AppColors.error),
+      );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final busy = _loading != null;
 
     return Scaffold(
       body: SafeArea(
@@ -55,7 +63,6 @@ class LoginScreen extends ConsumerWidget {
             children: [
               const Spacer(flex: 2),
 
-              // 앱 아이콘
               Container(
                 width: 60, height: 60,
                 decoration: BoxDecoration(
@@ -80,17 +87,21 @@ class LoginScreen extends ConsumerWidget {
               AppButton(
                 label: '카카오로 시작하기',
                 variant: AppButtonVariant.kakao,
-                isLoading: isLoading,
-                onPressed: () => handleLogin(
-                    ref.read(authProvider.notifier).loginWithKakao),
+                isLoading: _loading == 'kakao',
+                onPressed: busy
+                    ? null
+                    : () => _handleLogin(
+                    'kakao', ref.read(authProvider.notifier).loginWithKakao),
               ),
               const SizedBox(height: 12),
               AppButton(
                 label: 'Google로 시작하기',
                 variant: AppButtonVariant.google,
-                isLoading: isLoading,
-                onPressed: () => handleLogin(
-                    ref.read(authProvider.notifier).loginWithGoogle),
+                isLoading: _loading == 'google',
+                onPressed: busy
+                    ? null
+                    : () => _handleLogin(
+                    'google', ref.read(authProvider.notifier).loginWithGoogle),
               ),
 
               const SizedBox(height: 32),

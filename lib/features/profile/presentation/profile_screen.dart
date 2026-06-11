@@ -8,6 +8,7 @@ import '../../auth/presentation/login_screen.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_provider.dart';
 import '../../chat/domain/chat_provider.dart';
+import '../../footprints/domain/footprint_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -36,6 +37,11 @@ class ProfileScreen extends ConsumerWidget {
     // 소켓 끊고 토큰/온보딩 플래그 전부 삭제
     SocketClient.disconnect();
     await SecureStorage.clearAll();
+
+    // 강제 초기화 추가 ✅
+    ref.invalidate(myProfileProvider);
+    ref.invalidate(myGroupsProvider);
+    ref.invalidate(footprintsProvider);
 
     if (!context.mounted) return;
 

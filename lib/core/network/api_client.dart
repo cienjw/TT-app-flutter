@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../storage/secure_storage.dart';
 
 class ApiClient {
