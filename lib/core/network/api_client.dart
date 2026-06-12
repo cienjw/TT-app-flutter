@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../storage/secure_storage.dart';
 
 class ApiClient {
-  static const _baseUrl = 'http://211.201.115.13:3000';  // 외부 ip: 211.201.115.13 / 내부 ip : 192.168.0.7
+  static const _baseUrl = 'http://192.168.0.7:3000';  // 외부 ip: 211.201.115.13 / 내부 ip : 192.168.0.7
 
   static final Dio dio = Dio(BaseOptions(
     baseUrl: _baseUrl,

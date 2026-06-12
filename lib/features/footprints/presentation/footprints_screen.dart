@@ -19,7 +19,6 @@ class FootprintsScreen extends ConsumerStatefulWidget {
 
 class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   NaverMapController? _controller;
-  bool _markersSynced = false;
   double _bearing = 0;
   double _sheetExtent = 0.24; // 하단 시트의 현재 높이 비율 (initialChildSize와 동일)
 
