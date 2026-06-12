@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../data/auth_repository.dart';
+import 'dart:io' show Platform;
 
 final authRepoProvider = Provider((_) => AuthRepository());
 
@@ -42,8 +43,12 @@ class AuthNotifier extends AsyncNotifier<bool> {
     state = const AsyncLoading();
     try {
       final account = await GoogleSignIn(
+        clientId: Platform.isIOS
+            ? '28123611250-ji4iut5kenf3v7an9v2sach2q34qreop.apps.googleusercontent.com'
+            : null,
         serverClientId: '281236112500-t0ssar7j92mfd4vmkq610f9ku3kl83k3.apps.googleusercontent.com',
       ).signIn();
+
       if (account == null) {
         state = const AsyncData(false);
         return false;

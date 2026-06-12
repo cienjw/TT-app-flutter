@@ -146,6 +146,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
 
   Future<void> _onMapReady(NaverMapController controller) async {
     _controller = controller;
+    await controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
     ref.read(footprintsProvider).whenData(_syncMarkers);
     _goToMyLocation();
   }
@@ -162,24 +163,30 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       if (perm == LocationPermission.denied ||
           perm == LocationPermission.deniedForever) return;
 
-      // ① 캐시된 마지막 위치로 즉시 이동 (딜레이 거의 0)
+      final lo = await controller.getLocationOverlay();
+
+      // ① 캐시된 위치로 즉시 이동 + 파란점 먼저 표시
       final last = await Geolocator.getLastKnownPosition();
+      debugPrint('### lastKnown=$last');
       if (last != null) {
-        _moveCameraTo(controller, NLatLng(last.latitude, last.longitude));
+        final lastLatLng = NLatLng(last.latitude, last.longitude);
+        _moveCameraTo(controller, lastLatLng);
+        lo.setPosition(lastLatLng);
+        lo.setIsVisible(true);
       }
 
-      // ② 정확한 현재 위치로 보정
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.medium, // high → medium (더 빠름)
-        timeLimit: const Duration(seconds: 5),
-      );
-      final myLatLng = NLatLng(pos.latitude, pos.longitude);
-      _moveCameraTo(controller, myLatLng);
-
-      // 내 위치 파란 점
-      final lo = await controller.getLocationOverlay();
-      lo.setPosition(myLatLng);
-      lo.setIsVisible(true);
+      // ② 정확한 위치로 보정 (실패해도 위 파란점은 유지됨)
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 5),
+        );
+        debugPrint('### current=$pos');
+        final myLatLng = NLatLng(pos.latitude, pos.longitude);
+        _moveCameraTo(controller, myLatLng);
+        lo.setPosition(myLatLng);
+        lo.setIsVisible(true);
+      } catch (_) {/* 캐시 위치로 이미 파란점 표시됨 */}
     } catch (_) {}
   }
 

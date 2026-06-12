@@ -10,6 +10,7 @@ import 'terms_screen.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../profile/domain/profile_provider.dart';
 import '../../../core/network/socket_client.dart';
+import '../../footprints/domain/footprint_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -33,6 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // 이전 계정의 캐시 무효화
       ref.invalidate(myProfileProvider);
       ref.invalidate(myGroupsProvider);
+      ref.invalidate(footprintsProvider);
 
       Navigator.pushReplacement(
         context,

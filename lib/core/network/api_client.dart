@@ -19,11 +19,8 @@ class ApiClient {
         }
         handler.next(options);
       },
-      onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
-          // 토큰 만료 시 자동 갱신 (추후 구현)
-          await SecureStorage.clearAll();
-        }
+      onError: (error, handler) {
+        // 자동 토큰 갱신은 추후 구현. 지금은 401이어도 토큰 유지.
         handler.next(error);
       },
     ),
