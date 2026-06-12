@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Tt App</string>
+    <string>Meetory</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -67,10 +67,14 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
+<<<<<<< HEAD
 	<key>CFBundleDisplayName</key>
     <string>Meetory</string>
 
     <key>NSLocationWhenInUseUsageDescription</key>
+=======
+	<key>NSLocationWhenInUseUsageDescription</key>
+>>>>>>> 3e8a5b691c05f06750db14556acf0075db0bd52b
     <string>주변의 발자취와 내 위치를 지도에 표시하기 위해 위치 정보가 필요해요.</string>
 
     <key>CFBundleURLTypes</key>
@@ -92,6 +96,7 @@
     			<string>com.googleusercontent.apps.281236112500-ji4iut5kenf3v7an9v2sach2q34qreop</string>
     		</array>
     	</dict>
+<<<<<<< HEAD
     	</array>
 
     	<key>LSApplicationQueriesSchemes</key>
@@ -101,5 +106,15 @@
         	<string>kakaolink</string>
         </array>
 
+=======
+    </array>
+
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+    	<string>kakaokompassauth</string>
+    	<string>kakaotalk</string>
+    	<string>kakaolink</string>
+    </array>
+>>>>>>> 3e8a5b691c05f06750db14556acf0075db0bd52b
 </dict>
 </plist>
