@@ -145,7 +145,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
 
   Future<void> _onMapReady(NaverMapController controller) async {
     _controller = controller;
-    await controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
+    controller.setLocationTrackingMode(NLocationTrackingMode.noFollow);
     ref.read(footprintsProvider).whenData(_syncMarkers);
     _goToMyLocation();
   }
@@ -201,7 +201,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   Future<void> _updateBearing() async {
     final cam = await _controller?.getCameraPosition();
     if (cam == null || !mounted) return;
-    debugPrint('### bearing: ${cam.bearing}'); // 회전 확인용
     if ((cam.bearing - _bearing).abs() > 0.1) {
       setState(() => _bearing = cam.bearing);
     }

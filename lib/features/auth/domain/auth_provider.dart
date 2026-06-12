@@ -44,11 +44,7 @@ class AuthNotifier extends AsyncNotifier<bool> {
     try {
       final account = await GoogleSignIn(
         clientId: Platform.isIOS
-<<<<<<< HEAD
             ? '28123611250-ji4iut5kenf3v7an9v2sach2q34qreop.apps.googleusercontent.com'
-=======
-            ? '281236112500-ji4iut5kenf3v7an9v2sach2q34qreop.apps.googleusercontent.com'
->>>>>>> 3e8a5b691c05f06750db14556acf0075db0bd52b
             : null,
         serverClientId: '281236112500-t0ssar7j92mfd4vmkq610f9ku3kl83k3.apps.googleusercontent.com',
       ).signIn();

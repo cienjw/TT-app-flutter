@@ -34,6 +34,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   int? _myUserId;
   bool _isLoading = true;
 
+  static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
+
   @override
   void initState() {
     super.initState();
@@ -41,22 +43,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _init() async {
-    // 1. 내 userId 추출 (JWT 디코딩)
     final token = await SecureStorage.getAccessToken();
     if (token != null) {
       final decoded = JwtDecoder.decode(token);
       final raw = decoded['userId'];
-      // int든 double이든 String이든 안전하게 int로 변환
       _myUserId = switch (raw) {
         int v => v,
         double v => v.toInt(),
         String v => int.tryParse(v),
         _ => null,
       };
-      debugPrint('### my userId from JWT: $_myUserId');  // 디버깅용
     }
 
-    // 2. 과거 메시지 로드
     try {
       final history = await _repo.getMessages(widget.groupId);
       setState(() {
@@ -68,12 +66,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       setState(() => _isLoading = false);
     }
 
-    // 3. 소켓 연결 + 방 입장
     _socket = await SocketClient.connect();
     _socket!.emit('join_room', widget.groupId);
-
-    // 4. 새 메시지 수신 리스너
     _socket!.on('new_message', _onNewMessage);
+    _socket!.on('reaction_updated', _onReactionUpdated);
   }
 
   void _scrollToBottom() {
@@ -98,17 +94,66 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _textController.clear();
   }
 
-  // 1. 핸들러를 별도 함수로 분리
   void _onNewMessage(dynamic data) {
     final msg = Message.fromJson(Map<String, dynamic>.from(data));
     setState(() => _messages.add(msg));
     _scrollToBottom();
   }
 
+  void _onReactionUpdated(dynamic data) {
+    debugPrint('### reaction_updated 수신: $data');
+    final map = Map<String, dynamic>.from(data);
+    final messageId = (map['messageId'] as num).toInt();
+    final reactions = (map['reactions'] as List)
+        .map((e) => MessageReaction.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    setState(() {
+      final idx = _messages.indexWhere((m) => m.id == messageId);
+      if (idx != -1) {
+        _messages[idx] = _messages[idx].copyWith(reactions: reactions);
+      }
+    });
+  }
+
+  void _toggleReaction(int messageId, String reaction) {
+    _socket?.emit('toggle_reaction', {
+      'messageId': messageId,
+      'reaction': reaction,
+    });
+  }
+
+  void _showReactionPicker(Message msg) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: _reactionEmojis.map((emoji) {
+              return GestureDetector(
+                onTap: () {
+                  _toggleReaction(msg.id, emoji);
+                  Navigator.pop(context);
+                },
+                child: Text(emoji, style: const TextStyle(fontSize: 32)),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _socket?.emit('leave_room', widget.groupId);
     _socket?.off('new_message', _onNewMessage);
+    _socket?.off('reaction_updated', _onReactionUpdated);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -137,7 +182,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               itemBuilder: (context, i) {
                 final msg = _messages[i];
                 final isMine = msg.senderId == _myUserId;
-                return _MessageBubble(message: msg, isMine: isMine);
+                return _MessageBubble(
+                  message: msg,
+                  isMine: isMine,
+                  myUserId: _myUserId,
+                  onLongPress: () => _showReactionPicker(msg),
+                  onReactionTap: (reaction) =>
+                      _toggleReaction(msg.id, reaction),
+                );
               },
             ),
           ),
@@ -180,8 +232,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 class _MessageBubble extends StatelessWidget {
   final Message message;
   final bool isMine;
+  final int? myUserId;
+  final VoidCallback onLongPress;
+  final void Function(String reaction) onReactionTap;
 
-  const _MessageBubble({required this.message, required this.isMine});
+  const _MessageBubble({
+    required this.message,
+    required this.isMine,
+    required this.myUserId,
+    required this.onLongPress,
+    required this.onReactionTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -196,37 +257,76 @@ class _MessageBubble extends StatelessWidget {
             CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.primaryLight,
-              child: Icon(CupertinoIcons.person_fill, size: 18, color: AppColors.primary),
+              child: Icon(CupertinoIcons.person_fill,
+                  size: 18, color: AppColors.primary),
             ),
             const SizedBox(width: 8),
           ],
-          Column(
-            crossAxisAlignment:
-            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
-              if (!isMine)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2, left: 4),
-                  child: Text(message.senderNickname,
-                      style: AppTextStyles.caption),
-                ),
-              Container(
-                constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.65),
-                padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isMine ? AppColors.primary : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Text(
-                  message.content,
-                  style: AppTextStyles.body.copyWith(
-                    color: isMine ? Colors.white : AppColors.textPrimary,
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+              isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                if (!isMine)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2, left: 4),
+                    child: Text(message.senderNickname,
+                        style: AppTextStyles.caption),
+                  ),
+                GestureDetector(
+                  onLongPress: onLongPress,
+                  child: Container(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.65),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isMine
+                          ? AppColors.primary
+                          : AppColors.surfaceVariant,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      message.content,
+                      style: AppTextStyles.body.copyWith(
+                        color: isMine ? Colors.white : AppColors.textPrimary,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
+                if (message.reactions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: message.reactions.map((r) {
+                        final reacted = myUserId != null &&
+                            r.userIds.contains(myUserId);
+                        return GestureDetector(
+                          onTap: () => onReactionTap(r.reaction),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: reacted
+                                  ? AppColors.primaryLight
+                                  : AppColors.surfaceVariant,
+                              borderRadius: BorderRadius.circular(12),
+                              border: reacted
+                                  ? Border.all(
+                                  color: AppColors.primary, width: 1)
+                                  : null,
+                            ),
+                            child: Text('${r.reaction} ${r.count}',
+                                style: const TextStyle(fontSize: 12)),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

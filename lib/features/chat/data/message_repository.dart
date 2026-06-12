@@ -1,5 +1,25 @@
 import '../../../core/network/api_client.dart';
 
+class MessageReaction {
+  final String reaction;
+  final int count;
+  final List<int> userIds;
+
+  MessageReaction({
+    required this.reaction,
+    required this.count,
+    required this.userIds,
+  });
+
+  factory MessageReaction.fromJson(Map<String, dynamic> json) => MessageReaction(
+    reaction: json['reaction'] as String,
+    count: (json['count'] as num).toInt(),
+    userIds: (json['userIds'] as List?)
+        ?.map((e) => (e as num).toInt())
+        .toList() ?? [],
+  );
+}
+
 class Message {
   final int id;
   final int senderId;
@@ -7,6 +27,7 @@ class Message {
   final String? senderProfileImg;
   final String content;
   final DateTime createdAt;
+  final List<MessageReaction> reactions;
 
   Message({
     required this.id,
@@ -15,7 +36,18 @@ class Message {
     this.senderProfileImg,
     required this.content,
     required this.createdAt,
+    this.reactions = const [],
   });
+
+  Message copyWith({List<MessageReaction>? reactions}) => Message(
+    id: id,
+    senderId: senderId,
+    senderNickname: senderNickname,
+    senderProfileImg: senderProfileImg,
+    content: content,
+    createdAt: createdAt,
+    reactions: reactions ?? this.reactions,
+  );
 
   factory Message.fromJson(Map<String, dynamic> json) => Message(
     id: json['id'] as int,
@@ -24,6 +56,9 @@ class Message {
     senderProfileImg: json['sender_profile_img'] as String?,
     content: json['content'] as String,
     createdAt: DateTime.parse(json['created_at'] as String),
+    reactions: (json['reactions'] as List?)
+        ?.map((e) => MessageReaction.fromJson(Map<String, dynamic>.from(e)))
+        .toList() ?? [],
   );
 }
 
