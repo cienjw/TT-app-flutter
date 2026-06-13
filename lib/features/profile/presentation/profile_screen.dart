@@ -27,7 +27,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('로그아웃', style: TextStyle(color: AppColors.error)),
+            child: Text('로그아웃', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -65,7 +65,7 @@ class ProfileScreen extends ConsumerWidget {
       body: profileAsync.when(
         data: (profile) => ListView(
           children: [
-            _buildProfileHeader(profile),
+            _buildProfileHeader(context, profile),
             const SizedBox(height: 12),
             const Divider(height: 1),
             _MenuTile(
@@ -109,15 +109,17 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(UserProfile profile) {
+  // 시그니처에 BuildContext 추가
+  Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Row(
         children: [
           CircleAvatar(
             radius: 36,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(CupertinoIcons.person_fill, size: 40, color: AppColors.primary),
+            backgroundColor: context.cs.surfaceContainerHighest,
+            child: Icon(CupertinoIcons.person_fill,
+                size: 40, color: context.cs.onSurfaceVariant),
           ),
           const SizedBox(width: 18),
           Expanded(
@@ -158,13 +160,13 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? AppColors.error : AppColors.textPrimary;
+    final color = isDestructive ? context.cs.error : context.cs.onSurface;
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(label, style: AppTextStyles.body.copyWith(color: color)),
       trailing: isDestructive
           ? null
-          : Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
+          : Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
       onTap: onTap,
     );
   }

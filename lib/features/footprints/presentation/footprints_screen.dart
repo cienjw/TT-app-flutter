@@ -64,14 +64,11 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                 alignment: Alignment.topCenter,
                 child: Container(
                   margin: const EdgeInsets.all(12),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.cs.surface,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black12, blurRadius: 8),
-                    ],
+                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
                   ),
                   child: Text('같은 관심사를 가진 사람들이 다녀간 곳이에요',
                       style: AppTextStyles.caption),
@@ -94,20 +91,18 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                     );
                     setState(() => _bearing = 0);
                   },
+                  // 나침반 컨테이너 (const Icon → Icon)
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: 44, height: 44,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.cs.surface,
                       shape: BoxShape.circle,
-                      boxShadow: const [
-                        BoxShadow(color: Colors.black26, blurRadius: 4),
-                      ],
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
                     ),
                     child: Transform.rotate(
                       angle: -_bearing * math.pi / 180,
-                      child: const Icon(CupertinoIcons.location_north_fill,
-                          color: AppColors.secondary, size: 24),
+                      child: Icon(CupertinoIcons.location_north_fill,
+                          color: context.cs.primary, size: 24),
                     ),
                   ),
                 ),
@@ -120,18 +115,15 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
               bottom: myLocBottom,
               child: GestureDetector(
                 onTap: _goToMyLocation,
+                // 내 위치 버튼 (const Icon → Icon)
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.cs.surface,
                     shape: BoxShape.circle,
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 4),
-                    ],
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
                   ),
-                  child: const Icon(Icons.my_location,
-                      color: AppColors.primary, size: 22),
+                  child: Icon(Icons.my_location, color: context.cs.primary, size: 22),
                 ),
               ),
             ),
@@ -236,7 +228,8 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   void _showDetail(Footprint f) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      // _showDetail
+      backgroundColor: context.cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -251,10 +244,10 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       maxChildSize: 0.7,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12)],
+          decoration: BoxDecoration(
+            color: context.cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
           ),
           child: async.when(
             data: (footprints) => ListView(
@@ -264,10 +257,9 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                 Center(
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 10),
-                    width: 40,
-                    height: 4,
+                    width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceVariant,
+                      color: context.cs.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -324,17 +316,17 @@ class _FootprintCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.background,
+          color: context.cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
-              decoration: const BoxDecoration(
-                  color: AppColors.primaryLight, shape: BoxShape.circle),
-              child: const Icon(CupertinoIcons.placemark_fill, color: AppColors.primary),
+              width: 44, height: 44,
+              decoration: BoxDecoration(
+                  color: context.cs.surface, shape: BoxShape.circle),
+              child: Icon(CupertinoIcons.placemark_fill,
+                  color: context.cs.onSurfaceVariant),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -344,15 +336,14 @@ class _FootprintCard extends StatelessWidget {
                   Text(title,
                       style: AppTextStyles.body
                           .copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
                   Text('$dateStr · ${footprint.attendeeCount}명이 만났어요',
                       style: AppTextStyles.caption),
                 ],
               ),
             ),
-            const Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
+            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
           ],
         ),
       ),
@@ -379,7 +370,7 @@ class _FootprintDetailSheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
+                  color: context.cs.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -388,11 +379,11 @@ class _FootprintDetailSheet extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                      color: AppColors.primaryLight, shape: BoxShape.circle),
-                  child: const Icon(CupertinoIcons.person_3_fill, color: AppColors.primary),
+                  width: 48, height: 48,
+                  decoration: BoxDecoration(
+                      color: context.cs.surfaceContainerHighest, shape: BoxShape.circle),
+                  child: Icon(CupertinoIcons.person_3_fill,
+                      color: context.cs.onSurfaceVariant),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -418,16 +409,14 @@ class _FootprintDetailSheet extends StatelessWidget {
                 runSpacing: 8,
                 children: footprint.interests.map((name) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
+                      color: context.cs.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(name,
                         style: AppTextStyles.body.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600)),
+                            color: context.cs.onSurface, fontWeight: FontWeight.w600)),
                   );
                 }).toList(),
               ),

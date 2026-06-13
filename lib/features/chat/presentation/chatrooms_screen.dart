@@ -32,7 +32,8 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: AppColors.error),
+        // _runMatching 스낵바
+        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isMatching = false);
@@ -88,7 +89,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight,
+        color: context.cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -99,11 +100,10 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
           const SizedBox(height: 18),
 
-          // 블루투스 토글 (통합)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.cs.surface,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -111,8 +111,8 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                 Icon(Icons.bluetooth,
                     size: 22,
                     color: _bluetoothOn
-                        ? AppColors.primary
-                        : AppColors.textHint),
+                        ? context.cs.primary
+                        : context.cs.onSurfaceVariant),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -128,7 +128,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                 ),
                 Switch(
                   value: _bluetoothOn,
-                  activeColor: AppColors.primary,
+                  activeColor: context.cs.primary,
                   onChanged: (v) => setState(() => _bluetoothOn = v),
                 ),
               ],
@@ -136,7 +136,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           ),
           const SizedBox(height: 18),
 
-          // 관심사 일치도 슬라이더
           Row(
             children: [
               Text('관심사 일치도',
@@ -145,23 +144,23 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
               const Spacer(),
               Text('${(_matchThreshold * 100).round()}% 이상',
                   style: AppTextStyles.body.copyWith(
-                      color: AppColors.primary,
+                      color: context.cs.primary,
                       fontWeight: FontWeight.w700)),
             ],
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
-              activeTrackColor: AppColors.primary,
-              inactiveTrackColor: AppColors.surface,
-              thumbColor: AppColors.primary,
-              overlayColor: AppColors.primary.withOpacity(0.15),
+              activeTrackColor: context.cs.primary,
+              inactiveTrackColor: context.cs.surface,
+              thumbColor: context.cs.primary,
+              overlayColor: context.cs.primary.withOpacity(0.15),
             ),
             child: Slider(
               value: _matchThreshold,
               min: 0.5,
               max: 1.0,
-              divisions: 10, // 5% 단위
+              divisions: 10,
               onChanged: (v) => setState(() => _matchThreshold = v),
             ),
           ),
@@ -173,17 +172,16 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           ),
           const SizedBox(height: 20),
 
-          // 매칭 버튼 (카드 전체 너비)
           SizedBox(
             width: double.infinity,
             height: 48,
             child: FilledButton(
               onPressed: _isMatching ? null : _runMatching,
               child: _isMatching
-                  ? const SizedBox(
+                  ? SizedBox(
                   width: 18, height: 18,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2, color: context.cs.onPrimary))
                   : const Text('매칭하기'),
             ),
           ),
@@ -208,16 +206,17 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.cs.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.surfaceVariant),
+          border: Border.all(color: context.cs.surfaceContainerHighest),
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: AppColors.primaryLight,
-              child: Icon(CupertinoIcons.person_3_fill, color: AppColors.primary),
+              backgroundColor: context.cs.surfaceContainerHighest,
+              child: Icon(CupertinoIcons.person_3_fill,
+                  color: context.cs.onSurfaceVariant),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -236,7 +235,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: AppColors.textHint),
+            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
           ],
         ),
       ),

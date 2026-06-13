@@ -2,101 +2,115 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 class AppTheme {
-  static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      surface: AppColors.surface,
-      surfaceContainerHighest: AppColors.surfaceVariant,
+  static ThemeData get lightTheme => _build(
+    brightness: Brightness.light,
+    scheme: const ColorScheme.light().copyWith(
+      primary: AppColors.black, onPrimary: AppColors.white,
+      secondary: AppColors.black, onSecondary: AppColors.white,
+      surface: AppColors.lightSurface, onSurface: AppColors.lightTextPrimary,
+      surfaceContainerHighest: AppColors.lightSurfaceVariant,
+      onSurfaceVariant: AppColors.lightTextSecondary,
+      error: AppColors.error, onError: AppColors.white,
     ),
-    scaffoldBackgroundColor: AppColors.background,
+    scaffoldBg: AppColors.lightBg,
+    surface: AppColors.lightSurface,
+    surfaceVariant: AppColors.lightSurfaceVariant,
+    onSurface: AppColors.lightTextPrimary,
+    hint: AppColors.lightTextHint,
+    primary: AppColors.black,
+  );
 
-    // ✅ Android 터치 물결(스플래시) 제거
-    splashFactory: NoSplash.splashFactory,
-    highlightColor: Colors.transparent,
-
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      scrolledUnderElevation: 0,   // ✅ 스크롤 시 AppBar 그림자 제거
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      foregroundColor: AppColors.textPrimary,
+  static ThemeData get darkTheme => _build(
+    brightness: Brightness.dark,
+    scheme: const ColorScheme.dark().copyWith(
+      primary: AppColors.white, onPrimary: AppColors.black,
+      secondary: AppColors.white, onSecondary: AppColors.black,
+      surface: AppColors.darkSurface, onSurface: AppColors.darkTextPrimary,
+      surfaceContainerHighest: AppColors.darkSurfaceVariant,
+      onSurfaceVariant: AppColors.darkTextSecondary,
+      error: AppColors.error, onError: AppColors.black,
     ),
+    scaffoldBg: AppColors.darkBg,
+    surface: AppColors.darkSurface,
+    surfaceVariant: AppColors.darkSurfaceVariant,
+    onSurface: AppColors.darkTextPrimary,
+    hint: AppColors.darkTextHint,
+    primary: AppColors.white,
+  );
 
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14)),
+  static ThemeData _build({
+    required Brightness brightness,
+    required ColorScheme scheme,
+    required Color scaffoldBg,
+    required Color surface,
+    required Color surfaceVariant,
+    required Color onSurface,
+    required Color hint,
+    required Color primary,
+  }) {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scaffoldBg,
+      splashFactory: NoSplash.splashFactory,
+      highlightColor: Colors.transparent,
+      appBarTheme: AppBarTheme(
         elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        foregroundColor: onSurface,
       ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        minimumSize: const Size(double.infinity, 52),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 0,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: BorderSide(color: surfaceVariant),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        indicatorColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(color: selected ? primary : hint);
+        }),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: surface,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14)),
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: surfaceVariant),
+        ),
       ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 52),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14)),
-        side: const BorderSide(color: Color(0xFFD1D5DB)),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceVariant,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: primary, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: TextStyle(color: hint),
       ),
-    ),
-
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.surface,
-      indicatorColor: Colors.transparent, // ← 선택 시 알약 제거
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        final selected = states.contains(WidgetState.selected);
-        return IconThemeData(
-          color: selected ? AppColors.primary : AppColors.textHint,
-        );
-      }),
-    ),
-
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.surfaceVariant),
-      ),
-    ),
-
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: AppColors.surfaceVariant,
-      border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-      contentPadding:
-      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-  );
-
-  static ThemeData get darkTheme => lightTheme.copyWith(
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      surface: AppColors.darkSurface,
-    ),
-    scaffoldBackgroundColor: AppColors.darkBackground,
-  );
+    );
+  }
 }

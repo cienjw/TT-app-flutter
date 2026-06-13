@@ -33,30 +33,27 @@ class AppButton extends StatelessWidget {
             elevation: 0,
           ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(color: Colors.black87),
+          child: _buildChild(context, color: Colors.black87),
         ),
         AppButtonVariant.google => OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(),
+          child: _buildChild(context, color: context.cs.primary),
         ),
         AppButtonVariant.outlined => OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(),
+          child: _buildChild(context, color: context.cs.primary),
         ),
         AppButtonVariant.filled => FilledButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(),
+          child: _buildChild(context, color: context.cs.onPrimary),
         ),
       },
     );
   }
 
-  Widget _buildChild({Color? color}) => isLoading
+  Widget _buildChild(BuildContext context, {Color? color}) => isLoading
       ? SizedBox(
       width: 20, height: 20,
-      child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: color ?? Colors.white))
-      : Text(label,
-      style: AppTextStyles.button.copyWith(color: color));
+      child: CircularProgressIndicator(strokeWidth: 2, color: color))
+      : Text(label, style: AppTextStyles.button.copyWith(color: color));
 }

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/message_repository.dart';
-
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int groupId;
@@ -29,6 +28,7 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final _repo = MessageRepository();
   final _textController = TextEditingController();
+  final _itemScrollController = ItemScrollController();
   final _inputFocus = FocusNode();
 
   final List<Message> _messages = [];
@@ -37,7 +37,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isLoading = true;
   Message? _replyingTo;
   int? _highlightedId;
-  final _itemScrollController = ItemScrollController();
 
   static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
 
@@ -89,7 +88,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  // 답장 원본 메시지로 스크롤 + 하이라이트
   void _scrollToMessage(int messageId) {
     final idx = _messages.indexWhere((m) => m.id == messageId);
     if (idx == -1 || !_itemScrollController.isAttached) return;
@@ -152,7 +150,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _showReactionPicker(Message msg) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -215,7 +213,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   myUserId: _myUserId,
                   highlight: _highlightedId == msg.id,
                   onLongPress: () => _showReactionPicker(msg),
-                  onReactionTap: (reaction) => _toggleReaction(msg.id, reaction),
+                  onReactionTap: (reaction) =>
+                      _toggleReaction(msg.id, reaction),
                   onReply: () => _startReply(msg),
                   onReplyTap: msg.replyTo != null
                       ? () => _scrollToMessage(msg.replyTo!.id)
@@ -223,7 +222,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 );
               },
             ),
-
           ),
           if (_replyingTo != null) _buildReplyPreview(),
           _buildInputBar(),
@@ -236,14 +234,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final msg = _replyingTo!;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      color: AppColors.surfaceVariant,
+      color: context.cs.surfaceContainerHighest,
       child: Row(
         children: [
           Container(
             width: 3,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: context.cs.primary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -255,7 +253,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               children: [
                 Text('${msg.senderNickname}에게 답장',
                     style: AppTextStyles.caption.copyWith(
-                      color: AppColors.primary,
+                      color: context.cs.primary,
                       fontWeight: FontWeight.w600,
                     )),
                 const SizedBox(height: 2),
@@ -296,7 +294,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               onPressed: _sendMessage,
               icon: const Icon(CupertinoIcons.paperplane_fill),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.primary,
+                backgroundColor: context.cs.primary,
+                foregroundColor: context.cs.onPrimary,
               ),
             ),
           ],
@@ -334,19 +333,17 @@ class _MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<_MessageBubble> {
   double _dragExtent = 0;
-  static const double _maxDrag = 70; // 최대 당김 거리
-  static const double _triggerDrag = 50; // 답장 걸리는 임계값
+  static const double _maxDrag = 70;
+  static const double _triggerDrag = 50;
 
   @override
   Widget build(BuildContext context) {
+    final cs = context.cs;
     final message = widget.message;
-    final isMine = widget.isMine;
-    final myUserId = widget.myUserId;
 
     return GestureDetector(
       onHorizontalDragUpdate: (d) {
         setState(() {
-          // 왼쪽(음수)으로만, 최대 _maxDrag 까지
           _dragExtent = (_dragExtent + d.delta.dx).clamp(-_maxDrag, 0.0);
         });
       },
@@ -354,19 +351,18 @@ class _MessageBubbleState extends State<_MessageBubble> {
         if (_dragExtent.abs() >= _triggerDrag) {
           widget.onReply();
         }
-        setState(() => _dragExtent = 0); // 원위치
+        setState(() => _dragExtent = 0);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
           color: widget.highlight
-              ? AppColors.primaryLight.withOpacity(0.4)
+              ? cs.primary.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Stack(
           children: [
-            // 당길 때 서서히 나타나는 답장 아이콘
             Positioned.fill(
               child: Align(
                 alignment: Alignment.centerRight,
@@ -375,14 +371,14 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   child: Opacity(
                     opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
                     child: Icon(CupertinoIcons.reply,
-                        color: AppColors.primary, size: 22),
+                        color: cs.primary, size: 22),
                   ),
                 ),
               ),
             ),
             Transform.translate(
               offset: Offset(_dragExtent, 0),
-              child: _buildContent(context, message, isMine, myUserId),
+              child: _buildContent(context, message, widget.isMine, widget.myUserId),
             ),
           ],
         ),
@@ -392,6 +388,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
   Widget _buildContent(
       BuildContext context, Message message, bool isMine, int? myUserId) {
+    final cs = context.cs;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -402,9 +399,9 @@ class _MessageBubbleState extends State<_MessageBubble> {
           if (!isMine) ...[
             CircleAvatar(
               radius: 16,
-              backgroundColor: AppColors.primaryLight,
+              backgroundColor: cs.surfaceContainerHighest,
               child: Icon(CupertinoIcons.person_fill,
-                  size: 18, color: AppColors.primary),
+                  size: 18, color: cs.onSurfaceVariant),
             ),
             const SizedBox(width: 8),
           ],
@@ -419,8 +416,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     child: Text(message.senderNickname,
                         style: AppTextStyles.caption),
                   ),
-
-                // 이 메시지가 답장이면 → 누르면 원본으로 이동
                 if (message.replyTo != null)
                   GestureDetector(
                     onTap: widget.onReplyTap,
@@ -431,11 +426,10 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.6),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceVariant,
+                        color: cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                         border: Border(
-                            left: BorderSide(
-                                color: AppColors.primary, width: 3)),
+                            left: BorderSide(color: cs.primary, width: 3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +437,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                         children: [
                           Text(message.replyTo!.senderNickname,
                               style: AppTextStyles.caption.copyWith(
-                                color: AppColors.primary,
+                                color: cs.primary,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 11,
                               )),
@@ -456,7 +450,6 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       ),
                     ),
                   ),
-
                 GestureDetector(
                   onLongPress: widget.onLongPress,
                   child: Container(
@@ -465,20 +458,17 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isMine
-                          ? AppColors.primary
-                          : AppColors.surfaceVariant,
+                      color: isMine ? cs.primary : cs.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Text(
                       message.content,
                       style: AppTextStyles.body.copyWith(
-                        color: isMine ? Colors.white : AppColors.textPrimary,
+                        color: isMine ? cs.onPrimary : cs.onSurface,
                       ),
                     ),
                   ),
                 ),
-
                 if (message.reactions.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -495,12 +485,11 @@ class _MessageBubbleState extends State<_MessageBubble> {
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: reacted
-                                  ? AppColors.primaryLight
-                                  : AppColors.surfaceVariant,
+                                  ? cs.primary.withOpacity(0.15)
+                                  : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                               border: reacted
-                                  ? Border.all(
-                                  color: AppColors.primary, width: 1)
+                                  ? Border.all(color: cs.primary, width: 1)
                                   : null,
                             ),
                             child: Text('${r.reaction} ${r.count}',

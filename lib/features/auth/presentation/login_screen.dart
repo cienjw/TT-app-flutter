@@ -48,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('로그인 실패: $e'),
-            backgroundColor: AppColors.error),
+            backgroundColor: context.cs.error),
       );
     }
   }
@@ -69,11 +69,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Container(
                 width: 60, height: 60,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: context.cs.primary,
                   borderRadius: BorderRadius.circular(18),
                 ),
-                child: const Icon(CupertinoIcons.person_2_fill,
-                    color: Colors.white, size: 30),
+                child: Icon(CupertinoIcons.person_2_fill,
+                    color: context.cs.onPrimary, size: 30),
               ),
               const SizedBox(height: 28),
 
@@ -82,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'AI가 나와 잘 맞는 소규모 그룹을\n자동으로 연결해드려요.',
                 style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary, height: 1.6),
+                    color: context.cs.onSurfaceVariant, height: 1.6),
               ),
 
               const Spacer(flex: 2),

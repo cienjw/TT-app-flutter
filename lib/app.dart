@@ -14,7 +14,7 @@ class MeetoryApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.system, // ← 폰 설정 따라 자동 전환
       scrollBehavior: const ScrollBehavior().copyWith(
         overscroll: false,
         physics: const ClampingScrollPhysics(),
