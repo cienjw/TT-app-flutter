@@ -166,7 +166,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
 
       // ① 캐시된 위치로 즉시 이동 + 파란점 먼저 표시
       final last = await Geolocator.getLastKnownPosition();
-      debugPrint('### lastKnown=$last');
       if (last != null) {
         final lastLatLng = NLatLng(last.latitude, last.longitude);
         _moveCameraTo(controller, lastLatLng);
@@ -180,7 +179,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
           desiredAccuracy: LocationAccuracy.medium,
           timeLimit: const Duration(seconds: 5),
         );
-        debugPrint('### current=$pos');
         final myLatLng = NLatLng(pos.latitude, pos.longitude);
         _moveCameraTo(controller, myLatLng);
         lo.setPosition(myLatLng);

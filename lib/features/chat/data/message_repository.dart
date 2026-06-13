@@ -16,7 +16,26 @@ class MessageReaction {
     count: (json['count'] as num).toInt(),
     userIds: (json['userIds'] as List?)
         ?.map((e) => (e as num).toInt())
-        .toList() ?? [],
+        .toList() ??
+        [],
+  );
+}
+
+class ReplyTo {
+  final int id;
+  final String content;
+  final String senderNickname;
+
+  ReplyTo({
+    required this.id,
+    required this.content,
+    required this.senderNickname,
+  });
+
+  factory ReplyTo.fromJson(Map<String, dynamic> json) => ReplyTo(
+    id: (json['id'] as num).toInt(),
+    content: json['content'] as String? ?? '',
+    senderNickname: json['sender_nickname'] as String? ?? '익명',
   );
 }
 
@@ -28,6 +47,7 @@ class Message {
   final String content;
   final DateTime createdAt;
   final List<MessageReaction> reactions;
+  final ReplyTo? replyTo;
 
   Message({
     required this.id,
@@ -37,6 +57,7 @@ class Message {
     required this.content,
     required this.createdAt,
     this.reactions = const [],
+    this.replyTo,
   });
 
   Message copyWith({List<MessageReaction>? reactions}) => Message(
@@ -47,6 +68,7 @@ class Message {
     content: content,
     createdAt: createdAt,
     reactions: reactions ?? this.reactions,
+    replyTo: replyTo,
   );
 
   factory Message.fromJson(Map<String, dynamic> json) => Message(
@@ -58,7 +80,11 @@ class Message {
     createdAt: DateTime.parse(json['created_at'] as String),
     reactions: (json['reactions'] as List?)
         ?.map((e) => MessageReaction.fromJson(Map<String, dynamic>.from(e)))
-        .toList() ?? [],
+        .toList() ??
+        [],
+    replyTo: json['reply_to'] != null
+        ? ReplyTo.fromJson(Map<String, dynamic>.from(json['reply_to']))
+        : null,
   );
 }
 

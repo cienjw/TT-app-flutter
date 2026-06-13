@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/message_repository.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
+
 
 class ChatRoomScreen extends StatefulWidget {
   final int groupId;
@@ -27,12 +29,15 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final _repo = MessageRepository();
   final _textController = TextEditingController();
-  final _scrollController = ScrollController();
+  final _inputFocus = FocusNode();
 
   final List<Message> _messages = [];
   io.Socket? _socket;
   int? _myUserId;
   bool _isLoading = true;
+  Message? _replyingTo;
+  int? _highlightedId;
+  final _itemScrollController = ItemScrollController();
 
   static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
 
@@ -74,13 +79,29 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+      if (_messages.isNotEmpty && _itemScrollController.isAttached) {
+        _itemScrollController.scrollTo(
+          index: _messages.length - 1,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       }
+    });
+  }
+
+  // 답장 원본 메시지로 스크롤 + 하이라이트
+  void _scrollToMessage(int messageId) {
+    final idx = _messages.indexWhere((m) => m.id == messageId);
+    if (idx == -1 || !_itemScrollController.isAttached) return;
+    _itemScrollController.scrollTo(
+      index: idx,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      alignment: 0.3,
+    );
+    setState(() => _highlightedId = messageId);
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) setState(() => _highlightedId = null);
     });
   }
 
@@ -90,8 +111,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _socket!.emit('send_message', {
       'groupId': widget.groupId,
       'content': text,
+      if (_replyingTo != null) 'replyToId': _replyingTo!.id,
     });
     _textController.clear();
+    setState(() => _replyingTo = null);
+  }
+
+  void _startReply(Message msg) {
+    setState(() => _replyingTo = msg);
+    _inputFocus.requestFocus();
   }
 
   void _onNewMessage(dynamic data) {
@@ -101,7 +129,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _onReactionUpdated(dynamic data) {
-    debugPrint('### reaction_updated 수신: $data');
     final map = Map<String, dynamic>.from(data);
     final messageId = (map['messageId'] as num).toInt();
     final reactions = (map['reactions'] as List)
@@ -155,7 +182,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _socket?.off('new_message', _onNewMessage);
     _socket?.off('reaction_updated', _onReactionUpdated);
     _textController.dispose();
-    _scrollController.dispose();
+    _inputFocus.dispose();
     super.dispose();
   }
 
@@ -175,8 +202,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ? Center(
                 child: Text('첫 메시지를 보내보세요!',
                     style: AppTextStyles.caption))
-                : ListView.builder(
-              controller: _scrollController,
+                : ScrollablePositionedList.builder(
+              itemScrollController: _itemScrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, i) {
@@ -186,14 +213,63 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   message: msg,
                   isMine: isMine,
                   myUserId: _myUserId,
+                  highlight: _highlightedId == msg.id,
                   onLongPress: () => _showReactionPicker(msg),
-                  onReactionTap: (reaction) =>
-                      _toggleReaction(msg.id, reaction),
+                  onReactionTap: (reaction) => _toggleReaction(msg.id, reaction),
+                  onReply: () => _startReply(msg),
+                  onReplyTap: msg.replyTo != null
+                      ? () => _scrollToMessage(msg.replyTo!.id)
+                      : null,
                 );
               },
             ),
+
           ),
+          if (_replyingTo != null) _buildReplyPreview(),
           _buildInputBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview() {
+    final msg = _replyingTo!;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      color: AppColors.surfaceVariant,
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${msg.senderNickname}에게 답장',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    )),
+                const SizedBox(height: 2),
+                Text(msg.content,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(CupertinoIcons.xmark, size: 18),
+            onPressed: () => setState(() => _replyingTo = null),
+          ),
         ],
       ),
     );
@@ -208,6 +284,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             Expanded(
               child: TextField(
                 controller: _textController,
+                focusNode: _inputFocus,
                 decoration: const InputDecoration(
                   hintText: '메시지 입력하기...',
                 ),
@@ -229,23 +306,92 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 }
 
-class _MessageBubble extends StatelessWidget {
+class _MessageBubble extends StatefulWidget {
   final Message message;
   final bool isMine;
   final int? myUserId;
+  final bool highlight;
   final VoidCallback onLongPress;
   final void Function(String reaction) onReactionTap;
+  final VoidCallback onReply;
+  final VoidCallback? onReplyTap;
 
   const _MessageBubble({
+    super.key,
     required this.message,
     required this.isMine,
     required this.myUserId,
+    required this.highlight,
     required this.onLongPress,
     required this.onReactionTap,
+    required this.onReply,
+    this.onReplyTap,
   });
 
   @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  double _dragExtent = 0;
+  static const double _maxDrag = 70; // 최대 당김 거리
+  static const double _triggerDrag = 50; // 답장 걸리는 임계값
+
+  @override
   Widget build(BuildContext context) {
+    final message = widget.message;
+    final isMine = widget.isMine;
+    final myUserId = widget.myUserId;
+
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) {
+        setState(() {
+          // 왼쪽(음수)으로만, 최대 _maxDrag 까지
+          _dragExtent = (_dragExtent + d.delta.dx).clamp(-_maxDrag, 0.0);
+        });
+      },
+      onHorizontalDragEnd: (_) {
+        if (_dragExtent.abs() >= _triggerDrag) {
+          widget.onReply();
+        }
+        setState(() => _dragExtent = 0); // 원위치
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: widget.highlight
+              ? AppColors.primaryLight.withOpacity(0.4)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            // 당길 때 서서히 나타나는 답장 아이콘
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Opacity(
+                    opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
+                    child: Icon(CupertinoIcons.reply,
+                        color: AppColors.primary, size: 22),
+                  ),
+                ),
+              ),
+            ),
+            Transform.translate(
+              offset: Offset(_dragExtent, 0),
+              child: _buildContent(context, message, isMine, myUserId),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(
+      BuildContext context, Message message, bool isMine, int? myUserId) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -273,8 +419,46 @@ class _MessageBubble extends StatelessWidget {
                     child: Text(message.senderNickname,
                         style: AppTextStyles.caption),
                   ),
+
+                // 이 메시지가 답장이면 → 누르면 원본으로 이동
+                if (message.replyTo != null)
+                  GestureDetector(
+                    onTap: widget.onReplyTap,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border(
+                            left: BorderSide(
+                                color: AppColors.primary, width: 3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(message.replyTo!.senderNickname,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              )),
+                          Text(message.replyTo!.content,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption
+                                  .copyWith(fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ),
+
                 GestureDetector(
-                  onLongPress: onLongPress,
+                  onLongPress: widget.onLongPress,
                   child: Container(
                     constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.65),
@@ -294,6 +478,7 @@ class _MessageBubble extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 if (message.reactions.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
@@ -304,7 +489,7 @@ class _MessageBubble extends StatelessWidget {
                         final reacted = myUserId != null &&
                             r.userIds.contains(myUserId);
                         return GestureDetector(
-                          onTap: () => onReactionTap(r.reaction),
+                          onTap: () => widget.onReactionTap(r.reaction),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 3),
