@@ -68,7 +68,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -127,25 +127,21 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
             onTap: () => _toggle(id),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
-              padding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppColors.primary
-                    : AppColors.surfaceVariant,
+                    ? context.cs.primary
+                    : context.cs.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: selected
-                      ? AppColors.primary
-                      : Colors.transparent,
+                  color: selected ? context.cs.primary : Colors.transparent,
                 ),
               ),
               child: Text(
                 name,
                 style: AppTextStyles.body.copyWith(
-                  color: selected ? Colors.white : AppColors.textPrimary,
-                  fontWeight:
-                  selected ? FontWeight.w600 : FontWeight.normal,
+                  color: selected ? context.cs.onPrimary : context.cs.onSurface,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ),

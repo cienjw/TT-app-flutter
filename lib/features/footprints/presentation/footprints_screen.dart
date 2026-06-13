@@ -27,6 +27,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   @override
   Widget build(BuildContext context) {
     final footprintsAsync = ref.watch(footprintsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen(footprintsProvider, (_, next) {
       next.whenData(_syncMarkers);
@@ -46,10 +47,11 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
           children: [
             Positioned.fill(
               child: NaverMap(
-                options: const NaverMapViewOptions(
+                options: NaverMapViewOptions(
                   initialCameraPosition:
-                  NCameraPosition(target: _fallback, zoom: 12),
-                  mapType: NMapType.basic,
+                  const NCameraPosition(target: _fallback, zoom: 12),
+                  mapType: isDark ? NMapType.navi : NMapType.basic, // 라이트=basic, 다크=navi
+                  nightModeEnable: isDark,                          // navi일 때만 실제로 먹힘
                   locationButtonEnable: false,
                 ),
                 onMapReady: _onMapReady,

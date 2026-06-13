@@ -94,7 +94,7 @@ class _TermsItem extends StatelessWidget {
             Checkbox(
               value: value,
               onChanged: (v) => onChanged(v ?? false),
-              activeColor: AppColors.primary,
+              activeColor: context.cs.primary,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4)),
             ),
@@ -102,7 +102,7 @@ class _TermsItem extends StatelessWidget {
               child: Text(label, style: AppTextStyles.body),
             ),
             Icon(CupertinoIcons.chevron_right,
-                color: AppColors.textSecondary, size: 20),
+                color: context.cs.onSurfaceVariant, size: 20),
           ],
         ),
       ),

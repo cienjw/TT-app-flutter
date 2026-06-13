@@ -51,7 +51,7 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -101,7 +101,7 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: selected
-                                ? Border.all(color: AppColors.primary, width: 3)
+                                ? Border.all(color: context.cs.primary, width: 3)
                                 : null,
                           ),
                           child: CircleAvatar(

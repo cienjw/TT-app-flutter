@@ -20,12 +20,12 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 2),
               Container(
                 width: 96, height: 96,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: context.cs.primary,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(CupertinoIcons.checkmark,
-                    color: Colors.white, size: 56),
+                child: Icon(CupertinoIcons.checkmark,
+                    color: context.cs.onPrimary, size: 56),
               ),
               const SizedBox(height: 36),
               Text('Meetory에\n오신 것을 환영해요!',
