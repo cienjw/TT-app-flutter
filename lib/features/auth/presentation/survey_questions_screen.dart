@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/survey_data.dart';
@@ -60,63 +59,66 @@ class _SurveyQuestionsScreenState extends State<SurveyQuestionsScreen> {
   Widget build(BuildContext context) {
     final progress = (_current + 1) / surveyQuestions.length;
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.chevron_back),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: _back,
         ),
+        title: Text('${_current + 1} / ${surveyQuestions.length}', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
       ),
       body: SafeArea(
         child: Column(
           children: [
-            // 진행바
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
                   value: progress,
-                  minHeight: 6,
-                  backgroundColor: context.cs.surfaceContainerHighest,
-                  valueColor:
-                  AlwaysStoppedAnimation(context.cs.primary),
+                  minHeight: 8,
+                  backgroundColor: AppColors.lightGrey,
+                  valueColor: const AlwaysStoppedAnimation(AppColors.primaryPink),
                 ),
               ),
             ),
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(), // 선택으로만 진행
+                physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (i) => setState(() => _current = i),
                 itemCount: surveyQuestions.length,
                 itemBuilder: (context, qi) {
                   final q = surveyQuestions[qi];
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(28, 12, 28, 28),
+                    padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Q${qi + 1}.',
-                                style: AppTextStyles.headline2
-                                    .copyWith(color: context.cs.primary)),
-                            Text('${qi + 1} / ${surveyQuestions.length}',
-                                style: AppTextStyles.caption),
-                          ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPink.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Question ${qi + 1}',
+                            style: const TextStyle(
+                              color: AppColors.primaryPink,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(q.question, style: AppTextStyles.headline2),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 20),
+                        Text(q.question, style: AppTextStyles.headline2.copyWith(height: 1.4)),
+                        const SizedBox(height: 40),
                         ...List.generate(q.options.length, (oi) {
                           final opt = q.options[oi];
                           final selected = _answers[qi] == opt;
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(bottom: 16),
                             child: _optionCard(
-                              context,
-                              labelChar: String.fromCharCode(65 + oi), // A,B,C,D
                               option: opt,
                               selected: selected,
                               onTap: () => _select(qi, opt),
@@ -135,50 +137,54 @@ class _SurveyQuestionsScreenState extends State<SurveyQuestionsScreen> {
     );
   }
 
-  Widget _optionCard(BuildContext context,
-      {required String labelChar,
-        required SurveyOption option,
-        required bool selected,
-        required VoidCallback onTap}) {
+  Widget _optionCard({
+    required SurveyOption option,
+    required bool selected,
+    required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.all(16),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: selected
-              ? context.cs.primary.withOpacity(0.08)
-              : context.cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+          color: selected ? AppColors.primaryBlue.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? context.cs.primary : Colors.transparent,
-            width: 1.5,
+            color: selected ? AppColors.primaryBlue : AppColors.lightGrey,
+            width: 2,
           ),
+          boxShadow: selected ? [
+            BoxShadow(
+              color: AppColors.primaryBlue.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ] : [],
         ),
         child: Row(
           children: [
             if (option.emoji.isNotEmpty) ...[
-              Text(option.emoji, style: const TextStyle(fontSize: 26)),
-              const SizedBox(width: 14),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: selected ? Colors.white : AppColors.lightGrey,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(option.emoji, style: const TextStyle(fontSize: 24)),
+              ),
+              const SizedBox(width: 16),
             ],
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(labelChar,
-                      style: AppTextStyles.caption.copyWith(
-                        color: selected
-                            ? context.cs.primary
-                            : context.cs.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      )),
-                  const SizedBox(height: 2),
-                  Text(option.label,
-                      style: AppTextStyles.body
-                          .copyWith(fontWeight: FontWeight.w500)),
-                ],
+              child: Text(
+                option.label,
+                style: AppTextStyles.body.copyWith(
+                  fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                  color: selected ? AppColors.primaryBlue : AppColors.textPrimary,
+                ),
               ),
             ),
+            if (selected)
+              const Icon(Icons.check_circle_rounded, color: AppColors.primaryBlue),
           ],
         ),
       ),
