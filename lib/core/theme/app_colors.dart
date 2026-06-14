@@ -1,33 +1,42 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Meetory 로고 기반 메인 색상
-  static const primaryPink = Color(0xFFF28A91); // 핑크
-  static const primaryBlue = Color(0xFF8CBFD5); // 블루
-  static const backgroundBlue = Color(0xFFD4E9EE); // 연한 배경 블루
-  static const darkBlue = Color(0xFF2B4C7E); // 로고의 텍스트/라인용 어두운 블루 (추정)
-
   // 공통 흑백
-  static const black = Color(0xFF1A1A1A);
+  static const black = Color(0xFF000000);
   static const white = Color(0xFFFFFFFF);
-  static const grey = Color(0xFF9E9E9E);
-  static const lightGrey = Color(0xFFF5F5F5);
 
-  // 시맨틱 색상
-  static const primary = primaryPink;
-  static const secondary = primaryBlue;
-  static const background = white;
-  static const surface = white;
-  static const error = Color(0xFFE53935);
-  static const success = Color(0xFF43A047);
+  // 기존 호환 이름 (라이트 기준값)
+  static const primary         = black;            // 라이트: 검은 버튼
+  static const primaryLight    = Color(0xFFF2F2F2);
+  static const secondary       = black;
+  static const background      = white;
+  static const surface         = white;
+  static const surfaceVariant  = Color(0xFFF2F2F2);
+  static const textPrimary     = black;
+  static const textSecondary   = Color(0xFF6B7280);
+  static const textHint        = Color(0xFF9CA3AF);
 
-  // 텍스트 색상
-  static const textPrimary = Color(0xFF1A1A1A);
-  static const textSecondary = Color(0xFF757575);
-  static const textHint = Color(0xFFBDBDBD);
+  // 라이트 팔레트
+  static const lightBg             = white;
+  static const lightSurface        = white;
+  static const lightSurfaceVariant = Color(0xFFF2F2F2);
+  static const lightTextPrimary    = black;
+  static const lightTextSecondary  = Color(0xFF6B7280);
+  static const lightTextHint       = Color(0xFF9CA3AF);
 
-  // 소셜 색상
-  static const kakaoYellow = Color(0xFFFEE500);
+  // 다크 팔레트 (#000 기반)
+  static const darkBg              = black;
+  static const darkSurface         = black;
+  static const darkSurfaceVariant  = Color(0xFF1C1C1E);
+  static const darkTextPrimary     = white;
+  static const darkTextSecondary   = Color(0xFFA1A1AA);
+  static const darkTextHint        = Color(0xFF71717A);
+  static const darkBackground      = black; // 기존 이름 호환
+
+  // Status
+  static const error           = Color(0xFFE53935);
+  static const success         = Color(0xFF43A047);
+  static const kakaoYellow     = Color(0xFFFEE500);
 }
 
 extension ColorSchemeX on BuildContext {
