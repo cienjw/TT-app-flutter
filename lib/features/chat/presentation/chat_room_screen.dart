@@ -8,8 +8,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/message_repository.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/group_repository.dart';
+import '../domain/chat_provider.dart';
 
-class ChatRoomScreen extends StatefulWidget {
+class ChatRoomScreen extends ConsumerStatefulWidget {
   final int groupId;
   final String groupName;
   final int memberCount;
@@ -22,10 +25,10 @@ class ChatRoomScreen extends StatefulWidget {
   });
 
   @override
-  State<ChatRoomScreen> createState() => _ChatRoomScreenState();
+  ConsumerState<ChatRoomScreen> createState() => _ChatRoomScreenState();
 }
 
-class _ChatRoomScreenState extends State<ChatRoomScreen> {
+class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   final _repo = MessageRepository();
   final _textController = TextEditingController();
   final _itemScrollController = ItemScrollController();
@@ -37,12 +40,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isLoading = true;
   Message? _replyingTo;
   int? _highlightedId;
+  late String _groupName;
 
   static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
 
   @override
   void initState() {
     super.initState();
+    _groupName = widget.groupName;
     _init();
   }
 
@@ -174,6 +179,116 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  Future<void> _showMembers() async {
+    try {
+      final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: context.cs.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('참여 멤버 ${detail.members.length}명', style: AppTextStyles.title),
+                const SizedBox(height: 12),
+                ...detail.members.map((m) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: context.cs.surfaceContainerHighest,
+                        child: Icon(CupertinoIcons.person_fill,
+                            size: 20, color: context.cs.onSurfaceVariant),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(m.nickname, style: AppTextStyles.body),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
+      }
+    }
+  }
+
+  Future<void> _renameGroup() async {
+    final controller = TextEditingController(text: _groupName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('방 이름 변경'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '새 이름'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('변경'),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty) return;
+    try {
+      await ref.read(groupRepoProvider).updateGroupName(widget.groupId, newName);
+      if (!mounted) return;
+      setState(() => _groupName = newName);
+      ref.invalidate(myGroupsProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('변경 실패: $e')));
+      }
+    }
+  }
+
+  Future<void> _leaveGroup() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('채팅방 나가기'),
+        content: const Text('이 모임에서 나갈까요? 다시 들어올 수 없어요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('나가기', style: TextStyle(color: context.cs.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(groupRepoProvider).leaveGroup(widget.groupId);
+      if (!mounted) return;
+      ref.invalidate(myGroupsProvider);
+      Navigator.pop(context); // 채팅방 화면 닫기
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('나가기 실패: $e')));
+      }
+    }
+  }
+
   @override
   void dispose() {
     _socket?.emit('leave_room', widget.groupId);
@@ -188,8 +303,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.groupName} (${widget.memberCount}명)',
-            style: AppTextStyles.title),
+        title: Text('$_groupName (${widget.memberCount}명)', style: AppTextStyles.title),
+        actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.person_2_fill),
+            onPressed: _showMembers,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(CupertinoIcons.ellipsis_vertical),
+            onSelected: (v) {
+              if (v == 'rename') _renameGroup();
+              if (v == 'leave') _leaveGroup();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'rename', child: Text('방 이름 변경')),
+              PopupMenuItem(value: 'leave', child: Text('채팅방 나가기')),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
