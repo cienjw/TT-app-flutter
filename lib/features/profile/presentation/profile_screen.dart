@@ -10,6 +10,7 @@ import '../data/profile_repository.dart';
 import '../domain/profile_provider.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -109,33 +110,30 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // 시그니처에 BuildContext 추가
   Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: context.cs.surfaceContainerHighest,
-            child: Icon(CupertinoIcons.person_fill,
-                size: 40, color: context.cs.onSurfaceVariant),
-          ),
+          ProfileAvatar(imageId: profile.profileImg, radius: 36),
           const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(profile.nickname, style: AppTextStyles.headline2),
-                const SizedBox(height: 4),
-                Text(
-                  profile.interests.isEmpty
-                      ? '관심사를 설정해보세요'
-                      : profile.interests.join(', '),
-                  style: AppTextStyles.caption,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (profile.typeLabel != null) ...[
+                  const SizedBox(height: 4),
+                  Text(profile.typeLabel!,
+                      style: AppTextStyles.body.copyWith(
+                        color: context.cs.primary,
+                        fontWeight: FontWeight.w600,
+                      )),
+                ],
+                if (profile.mbti != null) ...[
+                  const SizedBox(height: 2),
+                  Text(profile.mbti!, style: AppTextStyles.caption),
+                ],
               ],
             ),
           ),

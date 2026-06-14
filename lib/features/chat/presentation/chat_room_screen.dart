@@ -11,11 +11,13 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/group_repository.dart';
 import '../domain/chat_provider.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final int groupId;
   final String groupName;
   final int memberCount;
+  final Set<int> _blockedIds = {};
 
   const ChatRoomScreen({
     super.key,
@@ -75,6 +77,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       setState(() => _isLoading = false);
     }
 
+    try {
+      final blocked = await ref.read(groupRepoProvider).getBlockedUsers();
+      _blockedIds.addAll(blocked.map((b) => b.id));
+    } catch (_) {}
+
     _socket = await SocketClient.connect();
     _socket!.emit('join_room', widget.groupId);
     _socket!.on('new_message', _onNewMessage);
@@ -127,6 +134,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   void _onNewMessage(dynamic data) {
     final msg = Message.fromJson(Map<String, dynamic>.from(data));
+    if (_blockedIds.contains(msg.senderId)) return; // 차단 → 새 메시지 안 보임
     setState(() => _messages.add(msg));
     _scrollToBottom();
   }
@@ -198,19 +206,18 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               children: [
                 Text('참여 멤버 ${detail.members.length}명', style: AppTextStyles.title),
                 const SizedBox(height: 12),
-                ...detail.members.map((m) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: context.cs.surfaceContainerHighest,
-                        child: Icon(CupertinoIcons.person_fill,
-                            size: 20, color: context.cs.onSurfaceVariant),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(m.nickname, style: AppTextStyles.body),
-                    ],
+                ...detail.members.map((m) => GestureDetector(
+                  onTap: () => _showMemberActions(m),
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        ProfileAvatar(imageId: m.profileImg, radius: 20),
+                        const SizedBox(width: 12),
+                        Text(m.nickname, style: AppTextStyles.body),
+                      ],
+                    ),
                   ),
                 )),
               ],
@@ -222,6 +229,204 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
+      }
+    }
+  }
+
+  void _showMemberActions(GroupMember m) {
+    if (m.id == _myUserId) return; // 본인은 제외
+    Navigator.pop(context); // 멤버 시트 닫기
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(m.nickname, style: AppTextStyles.title),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.exclamationmark_triangle),
+              title: const Text('신고하기'),
+              onTap: () { Navigator.pop(context); _reportMember(m); },
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.nosign, color: context.cs.error),
+              title: Text('차단하기', style: TextStyle(color: context.cs.error)),
+              onTap: () { Navigator.pop(context); _blockMember(m); },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reportMember(GroupMember m) async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${m.nickname} 신고'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '신고 사유 (선택)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('신고'),
+          ),
+        ],
+      ),
+    );
+    if (reason == null) return;
+    try {
+      await ref.read(groupRepoProvider).reportUser(m.id, reason: reason);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('신고가 접수됐어요.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('신고 실패: $e')));
+      }
+    }
+  }
+
+  Future<void> _blockMember(GroupMember m) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${m.nickname} 차단'),
+        content: const Text('차단하면 이후 이 사람의 메시지가 보이지 않고, 새 매칭에서도 제외돼요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('차단', style: TextStyle(color: context.cs.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(groupRepoProvider).blockUser(m.id);
+      if (!mounted) return;
+      setState(() => _blockedIds.add(m.id)); // 이후 메시지부터 차단
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('차단했어요.')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('차단 실패: $e')));
+      }
+    }
+  }
+
+  void _showMemberActions(GroupMember m) {
+    if (m.id == _myUserId) return; // 본인은 제외
+    Navigator.pop(context); // 멤버 시트 닫기
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(m.nickname, style: AppTextStyles.title),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.exclamationmark_triangle),
+              title: const Text('신고하기'),
+              onTap: () { Navigator.pop(context); _reportMember(m); },
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.nosign, color: context.cs.error),
+              title: Text('차단하기', style: TextStyle(color: context.cs.error)),
+              onTap: () { Navigator.pop(context); _blockMember(m); },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reportMember(GroupMember m) async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${m.nickname} 신고'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '신고 사유 (선택)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('신고'),
+          ),
+        ],
+      ),
+    );
+    if (reason == null) return;
+    try {
+      await ref.read(groupRepoProvider).reportUser(m.id, reason: reason);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('신고가 접수됐어요.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('신고 실패: $e')));
+      }
+    }
+  }
+
+  Future<void> _blockMember(GroupMember m) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('${m.nickname} 차단'),
+        content: const Text('차단하면 이후 이 사람의 메시지가 보이지 않고, 새 매칭에서도 제외돼요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('차단', style: TextStyle(color: context.cs.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(groupRepoProvider).blockUser(m.id);
+      if (!mounted) return;
+      setState(() => _blockedIds.add(m.id)); // 이후 메시지부터 차단
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('차단했어요.')));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('차단 실패: $e')));
       }
     }
   }
@@ -528,12 +733,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMine) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: cs.surfaceContainerHighest,
-              child: Icon(CupertinoIcons.person_fill,
-                  size: 18, color: cs.onSurfaceVariant),
-            ),
+            ProfileAvatar(imageId: message.senderProfileImg, radius: 16),  // ← CircleAvatar 대체
             const SizedBox(width: 8),
           ],
           Flexible(
