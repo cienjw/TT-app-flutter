@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -16,15 +17,15 @@ class ChatroomsScreen extends ConsumerStatefulWidget {
 
 class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _bluetoothOn = false;
-  bool _isMatching = false;
-  bool _isWaiting = false;
+  bool _isMatching = false; // enqueue 요청 중
+  bool _isWaiting = false;  // 대기열에 올라가 있음
   double _matchThreshold = 0.85;
   Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
-    _checkMatchingStatus();
+    _checkMatchingStatus(); // 화면 진입 시 이미 대기 중인지 복원
   }
 
   @override
@@ -41,14 +42,14 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         setState(() => _isWaiting = true);
         _startPolling();
       }
-    } catch (_) {}
+    } catch (_) {/* 무시 */}
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       if (!mounted) return;
-      ref.invalidate(myGroupsProvider);
+      ref.invalidate(myGroupsProvider); // 새 방 생기면 목록에 반영
       try {
         final status = await ref.read(groupRepoProvider).getMatchingStatus();
         if (!mounted) return;
@@ -58,7 +59,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             const SnackBar(content: Text('매칭 완료! 새 모임이 열렸어요.')),
           );
         }
-      } catch (_) {}
+      } catch (_) {/* 무시 */}
     });
   }
 
@@ -81,7 +82,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: AppColors.error),
+        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isMatching = false);
@@ -89,11 +90,11 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Future<void> _cancelMatching() async {
-    _pollTimer?.cancel();
+    _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
     _pollTimer = null;
     try {
       await ref.read(groupRepoProvider).cancelMatching();
-    } catch (_) {}
+    } catch (_) {/* 무시 */}
     if (!mounted) return;
     setState(() => _isWaiting = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -106,23 +107,20 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     final groupsAsync = ref.watch(myGroupsProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('채팅'),
+        title: const Text('채팅방'),
+        titleTextStyle: AppTextStyles.headline2,
         actions: [
-          IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
+          IconButton(icon: const Icon(CupertinoIcons.search), onPressed: () {}),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(myGroupsProvider),
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           children: [
-            const SizedBox(height: 8),
-            _buildMatchingSection(),
-            const SizedBox(height: 32),
-            Text('참여 중인 대화', style: AppTextStyles.title),
-            const SizedBox(height: 16),
+            _buildMatchingCard(),
+            const SizedBox(height: 24),
             groupsAsync.when(
               data: (groups) => groups.isEmpty
                   ? _emptyState()
@@ -142,75 +140,103 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildMatchingSection() {
+  Widget _buildMatchingCard() {
     if (_isWaiting) return _buildWaitingCard();
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.backgroundBlue.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(28),
+        color: context.cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, color: AppColors.primaryBlue, size: 20),
-              const SizedBox(width: 8),
-              Text('새로운 매칭', style: AppTextStyles.title.copyWith(color: AppColors.primaryBlue)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text('주변의 새로운 친구들과 대화를 시작해보세요.', style: AppTextStyles.bodySmall),
-          const SizedBox(height: 24),
-          
-          // Bluetooth Toggle
-          Row(
-            children: [
-              Icon(Icons.location_on_rounded, 
-                  color: _bluetoothOn ? AppColors.primaryPink : AppColors.textHint),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text('주변 친구 우선 탐색', style: AppTextStyles.body.copyWith(fontSize: 15)),
-              ),
-              Switch(
-                value: _bluetoothOn,
-                activeColor: AppColors.primaryPink,
-                onChanged: (v) => setState(() => _bluetoothOn = v),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Slider
-          Row(
-            children: [
-              Text('관심사 일치도', style: AppTextStyles.body.copyWith(fontSize: 15)),
-              const Spacer(),
-              Text('${(_matchThreshold * 100).round()}%', 
-                  style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          Slider(
-            value: _matchThreshold,
-            min: 0.5,
-            max: 1.0,
-            activeColor: AppColors.primaryPink,
-            inactiveColor: AppColors.primaryPink.withOpacity(0.1),
-            onChanged: (v) => setState(() => _matchThreshold = v),
-          ),
-          
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _isMatching ? null : _runMatching,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryBlue,
-              minimumSize: const Size(double.infinity, 52),
+          Text('채팅방 매칭', style: AppTextStyles.title),
+          const SizedBox(height: 4),
+          Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: context.cs.surface,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: _isMatching
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('매칭 시작하기'),
+            child: Row(
+              children: [
+                Icon(Icons.bluetooth,
+                    size: 22,
+                    color: _bluetoothOn
+                        ? context.cs.primary
+                        : context.cs.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('주변 탐색',
+                          style: AppTextStyles.body
+                              .copyWith(fontWeight: FontWeight.w600)),
+                      Text('가까이 있는 사람을 우선 찾아요',
+                          style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _bluetoothOn,
+                  activeColor: context.cs.primary,
+                  onChanged: (v) => setState(() => _bluetoothOn = v),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Text('관심사 일치도',
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Text('${(_matchThreshold * 100).round()}% 이상',
+                  style: AppTextStyles.body.copyWith(
+                      color: context.cs.primary, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              activeTrackColor: context.cs.primary,
+              inactiveTrackColor: context.cs.surface,
+              thumbColor: context.cs.primary,
+              overlayColor: context.cs.primary.withOpacity(0.15),
+            ),
+            child: Slider(
+              value: _matchThreshold,
+              min: 0.5,
+              max: 1.0,
+              divisions: 10,
+              onChanged: (v) => setState(() => _matchThreshold = v),
+            ),
+          ),
+          Text(
+            _matchThreshold >= 0.99
+                ? '나와 완벽히 일치하는 사람만 기다려요'
+                : '관심사가 ${(_matchThreshold * 100).round()}% 이상 맞는 사람과 연결돼요',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: _isMatching ? null : _runMatching,
+              child: _isMatching
+                  ? SizedBox(
+                  width: 18, height: 18,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: context.cs.onPrimary))
+                  : const Text('매칭하기'),
+            ),
           ),
         ],
       ),
@@ -219,34 +245,33 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
   Widget _buildWaitingCard() {
     return Container(
-      padding: const EdgeInsets.all(32),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.backgroundBlue.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(28),
+        color: context.cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          const SizedBox(
-            width: 48,
-            height: 48,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
-              strokeWidth: 3,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('맞는 친구를 찾는 중', style: AppTextStyles.title),
+              const SizedBox(width: 10),
+              _PulsingDots(color: context.cs.primary),
+            ],
           ),
-          const SizedBox(height: 24),
-          Text('매칭 대기 중...', style: AppTextStyles.title),
           const SizedBox(height: 8),
-          Text('딱 맞는 인연을 찾고 있어요.', style: AppTextStyles.bodySmall, textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: _cancelMatching,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.primaryBlue),
-              foregroundColor: AppColors.primaryBlue,
-              minimumSize: const Size(double.infinity, 52),
+          Text('조건에 맞는 사람이 모이면 자동으로 모임이 열려요',
+              textAlign: TextAlign.center, style: AppTextStyles.caption),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: _cancelMatching,
+              child: const Text('매칭 취소'),
             ),
-            child: const Text('취소하기'),
           ),
         ],
       ),
@@ -254,7 +279,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Widget _buildRoomCard(GroupSummary group) {
-    return InkWell(
+    return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
@@ -265,49 +290,37 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           ),
         ),
       ),
-      borderRadius: BorderRadius.circular(20),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.lightGrey),
+          color: context.cs.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.cs.surfaceContainerHighest),
         ),
         child: Row(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.backgroundBlue,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Icon(Icons.groups_rounded, color: AppColors.primaryBlue, size: 28),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: context.cs.surfaceContainerHighest,
+              child: Icon(CupertinoIcons.person_3_fill,
+                  color: context.cs.onSurfaceVariant),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Text(group.name, style: AppTextStyles.title.copyWith(fontSize: 16)),
-                      const SizedBox(width: 6),
-                      Text('${group.memberCount}', style: TextStyle(color: AppColors.primaryPink, fontSize: 13, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+                  Text('${group.name} (${group.memberCount}명)',
+                      style: AppTextStyles.title),
                   const SizedBox(height: 4),
-                  Text(
-                    group.lastMessage ?? '첫 메시지를 보내보세요!',
-                    style: AppTextStyles.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(group.lastMessage ?? '아직 대화가 없어요',
+                      style: AppTextStyles.caption,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
           ],
         ),
       ),
@@ -315,17 +328,64 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Widget _emptyState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 60),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.chat_bubble_outline_rounded, size: 48, color: AppColors.textHint.withOpacity(0.5)),
-            const SizedBox(height: 16),
-            Text('참여 중인 대화가 없습니다.', style: AppTextStyles.bodySmall),
-          ],
-        ),
+        child: Text('아직 참여한 채팅방이 없어요.\n매칭하기를 눌러 시작해보세요!',
+            textAlign: TextAlign.center, style: AppTextStyles.caption),
       ),
+    );
+  }
+}
+
+// 대기 중 맥동하는 점 3개
+class _PulsingDots extends StatefulWidget {
+  final Color color;
+  const _PulsingDots({required this.color});
+
+  @override
+  State<_PulsingDots> createState() => _PulsingDotsState();
+}
+
+class _PulsingDotsState extends State<_PulsingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) {
+        return AnimatedBuilder(
+          animation: _c,
+          builder: (_, __) {
+            final t = (_c.value - i * 0.18) % 1.0;
+            final pulse = (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0);
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: 7, height: 7,
+              decoration: BoxDecoration(
+                color: widget.color.withOpacity(0.3 + 0.7 * pulse),
+                shape: BoxShape.circle,
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

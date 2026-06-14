@@ -155,9 +155,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   void _showReactionPicker(Message msg) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: context.cs.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => SafeArea(
         child: Padding(
@@ -170,14 +170,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   _toggleReaction(msg.id, emoji);
                   Navigator.pop(context);
                 },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightGrey,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(emoji, style: const TextStyle(fontSize: 32)),
-                ),
+                child: Text(emoji, style: const TextStyle(fontSize: 32)),
               );
             }).toList(),
           ),
@@ -192,30 +185,31 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       if (!mounted) return;
       showModalBottomSheet(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: context.cs.surface,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         builder: (_) => SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('참여 멤버 ${detail.members.length}명', style: AppTextStyles.title),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 ...detail.members.map((m) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: AppColors.backgroundBlue, shape: BoxShape.circle),
-                        child: const Icon(Icons.person_rounded, size: 24, color: AppColors.primaryBlue),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: context.cs.surfaceContainerHighest,
+                        child: Icon(CupertinoIcons.person_fill,
+                            size: 20, color: context.cs.onSurfaceVariant),
                       ),
-                      const SizedBox(width: 16),
-                      Text(m.nickname, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      Text(m.nickname, style: AppTextStyles.body),
                     ],
                   ),
                 )),
@@ -227,28 +221,105 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('멤버를 불러오지 못했어요: $e'), backgroundColor: AppColors.error));
+            SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
+      }
+    }
+  }
+
+  Future<void> _renameGroup() async {
+    final controller = TextEditingController(text: _groupName);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('방 이름 변경'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '새 이름'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('변경'),
+          ),
+        ],
+      ),
+    );
+    if (newName == null || newName.isEmpty) return;
+    try {
+      await ref.read(groupRepoProvider).updateGroupName(widget.groupId, newName);
+      if (!mounted) return;
+      setState(() => _groupName = newName);
+      ref.invalidate(myGroupsProvider);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('변경 실패: $e')));
+      }
+    }
+  }
+
+  Future<void> _leaveGroup() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('채팅방 나가기'),
+        content: const Text('이 모임에서 나갈까요? 다시 들어올 수 없어요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('나가기', style: TextStyle(color: context.cs.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(groupRepoProvider).leaveGroup(widget.groupId);
+      if (!mounted) return;
+      ref.invalidate(myGroupsProvider);
+      Navigator.pop(context); // 채팅방 화면 닫기
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('나가기 실패: $e')));
       }
     }
   }
 
   @override
+  void dispose() {
+    _socket?.emit('leave_room', widget.groupId);
+    _socket?.off('new_message', _onNewMessage);
+    _socket?.off('reaction_updated', _onReactionUpdated);
+    _textController.dispose();
+    _inputFocus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Column(
-          children: [
-            Text(_groupName, style: AppTextStyles.title.copyWith(fontSize: 16)),
-            Text('${widget.memberCount}명 참여 중', style: AppTextStyles.caption.copyWith(fontSize: 12)),
-          ],
-        ),
+        title: Text('$_groupName (${widget.memberCount}명)', style: AppTextStyles.title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.people_alt_rounded),
+            icon: const Icon(CupertinoIcons.person_2_fill),
             onPressed: _showMembers,
           ),
-          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            icon: const Icon(CupertinoIcons.ellipsis_vertical),
+            onSelected: (v) {
+              if (v == 'rename') _renameGroup();
+              if (v == 'leave') _leaveGroup();
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'rename', child: Text('방 이름 변경')),
+              PopupMenuItem(value: 'leave', child: Text('채팅방 나가기')),
+            ],
+          ),
         ],
       ),
       body: Column(
@@ -258,17 +329,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
                 ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.chat_bubble_outline_rounded, size: 48, color: AppColors.textHint.withOpacity(0.5)),
-                    const SizedBox(height: 16),
-                    Text('첫 메시지를 보내보세요!', style: AppTextStyles.caption),
-                  ],
-                ))
+                child: Text('첫 메시지를 보내보세요!',
+                    style: AppTextStyles.caption))
                 : ScrollablePositionedList.builder(
               itemScrollController: _itemScrollController,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, i) {
                 final msg = _messages[i];
@@ -299,31 +364,39 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   Widget _buildReplyPreview() {
     final msg = _replyingTo!;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: AppColors.lightGrey,
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      color: context.cs.surfaceContainerHighest,
       child: Row(
         children: [
           Container(
-            width: 4, height: 32,
-            decoration: BoxDecoration(color: AppColors.primaryPink, borderRadius: BorderRadius.circular(2)),
+            width: 3,
+            height: 36,
+            decoration: BoxDecoration(
+              color: context.cs.primary,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${msg.senderNickname}에게 답장', style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.bold, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(msg.content, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.caption),
+                Text('${msg.senderNickname}에게 답장',
+                    style: AppTextStyles.caption.copyWith(
+                      color: context.cs.primary,
+                      fontWeight: FontWeight.w600,
+                    )),
+                const SizedBox(height: 2),
+                Text(msg.content,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.caption),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 20),
+            icon: const Icon(CupertinoIcons.xmark, size: 18),
             onPressed: () => setState(() => _replyingTo = null),
           ),
         ],
@@ -332,37 +405,32 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   Widget _buildInputBar() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + MediaQuery.of(context).padding.bottom),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _textController,
-              focusNode: _inputFocus,
-              decoration: InputDecoration(
-                hintText: '메시지를 입력하세요...',
-                fillColor: AppColors.lightGrey,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                focusNode: _inputFocus,
+                decoration: const InputDecoration(
+                  hintText: '메시지 입력하기...',
+                ),
+                onSubmitted: (_) => _sendMessage(),
               ),
-              onSubmitted: (_) => _sendMessage(),
             ),
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(color: AppColors.primaryPink, shape: BoxShape.circle),
-              child: const Icon(Icons.send_rounded, color: Colors.white, size: 24),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              onPressed: _sendMessage,
+              icon: const Icon(CupertinoIcons.paperplane_fill),
+              style: IconButton.styleFrom(
+                backgroundColor: context.cs.primary,
+                foregroundColor: context.cs.onPrimary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -382,8 +450,8 @@ class _MessageBubble extends StatefulWidget {
     super.key,
     required this.message,
     required this.isMine,
-    this.myUserId,
-    this.highlight = false,
+    required this.myUserId,
+    required this.highlight,
     required this.onLongPress,
     required this.onReactionTap,
     required this.onReply,
@@ -395,130 +463,177 @@ class _MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<_MessageBubble> {
+  double _dragExtent = 0;
+  static const double _maxDrag = 70;
+  static const double _triggerDrag = 50;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: widget.isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          if (!widget.isMine) ...[
-            Text(widget.message.senderNickname, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 6),
+    final cs = context.cs;
+    final message = widget.message;
+
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) {
+        setState(() {
+          _dragExtent = (_dragExtent + d.delta.dx).clamp(-_maxDrag, 0.0);
+        });
+      },
+      onHorizontalDragEnd: (_) {
+        if (_dragExtent.abs() >= _triggerDrag) {
+          widget.onReply();
+        }
+        setState(() => _dragExtent = 0);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: widget.highlight
+              ? cs.primary.withOpacity(0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Opacity(
+                    opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
+                    child: Icon(CupertinoIcons.reply,
+                        color: cs.primary, size: 22),
+                  ),
+                ),
+              ),
+            ),
+            Transform.translate(
+              offset: Offset(_dragExtent, 0),
+              child: _buildContent(context, message, widget.isMine, widget.myUserId),
+            ),
           ],
-          GestureDetector(
-            onLongPress: widget.onLongPress,
-            onDoubleTap: widget.onReply,
-            child: Row(
-              mainAxisAlignment: widget.isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.end,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent(
+      BuildContext context, Message message, bool isMine, int? myUserId) {
+    final cs = context.cs;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment:
+        isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isMine) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: cs.surfaceContainerHighest,
+              child: Icon(CupertinoIcons.person_fill,
+                  size: 18, color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Column(
+              crossAxisAlignment:
+              isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                if (widget.isMine) _buildTime(),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: widget.highlight
-                          ? AppColors.primaryPink.withOpacity(0.2)
-                          : (widget.isMine ? AppColors.primaryPink : AppColors.lightGrey),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(20),
-                        topRight: const Radius.circular(20),
-                        bottomLeft: Radius.circular(widget.isMine ? 20 : 4),
-                        bottomRight: Radius.circular(widget.isMine ? 4 : 20),
+                if (!isMine)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2, left: 4),
+                    child: Text(message.senderNickname,
+                        style: AppTextStyles.caption),
+                  ),
+                if (message.replyTo != null)
+                  GestureDetector(
+                    onTap: widget.onReplyTap,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.6),
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border(
+                            left: BorderSide(color: cs.primary, width: 3)),
                       ),
-                      boxShadow: widget.highlight ? [BoxShadow(color: AppColors.primaryPink.withOpacity(0.3), blurRadius: 10)] : [],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(message.replyTo!.senderNickname,
+                              style: AppTextStyles.caption.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              )),
+                          Text(message.replyTo!.content,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.caption
+                                  .copyWith(fontSize: 11)),
+                        ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (widget.message.replyTo != null) _buildReplyTag(),
-                        Text(
-                          widget.message.content,
-                          style: TextStyle(
-                            color: widget.isMine ? Colors.white : AppColors.textPrimary,
-                            fontSize: 15,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
+                  ),
+                GestureDetector(
+                  onLongPress: widget.onLongPress,
+                  child: Container(
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.65),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isMine ? cs.primary : cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Text(
+                      message.content,
+                      style: AppTextStyles.body.copyWith(
+                        color: isMine ? cs.onPrimary : cs.onSurface,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (!widget.isMine) _buildTime(),
+                if (message.reactions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: message.reactions.map((r) {
+                        final reacted = myUserId != null &&
+                            r.userIds.contains(myUserId);
+                        return GestureDetector(
+                          onTap: () => widget.onReactionTap(r.reaction),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: reacted
+                                  ? cs.primary.withOpacity(0.15)
+                                  : cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(12),
+                              border: reacted
+                                  ? Border.all(color: cs.primary, width: 1)
+                                  : null,
+                            ),
+                            child: Text('${r.reaction} ${r.count}',
+                                style: const TextStyle(fontSize: 12)),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
               ],
             ),
           ),
-          if (widget.message.reactions.isNotEmpty) _buildReactions(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTime() {
-    final timeStr = DateFormat('a h:mm').format(widget.message.createdAt);
-    return Text(timeStr, style: AppTextStyles.caption.copyWith(fontSize: 10));
-  }
-
-  Widget _buildReplyTag() {
-    return GestureDetector(
-      onTap: widget.onReplyTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.reply_rounded, size: 14, color: AppColors.textSecondary),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                '${widget.message.replyTo!.senderNickname}: ${widget.message.replyTo!.content}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildReactions() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Wrap(
-        spacing: 4,
-        children: widget.message.reactions.map((r) {
-          final isMyReaction = r.userIds.contains(widget.myUserId);
-          return GestureDetector(
-            onTap: () => widget.onReactionTap(r.emoji),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: isMyReaction ? AppColors.primaryPink.withOpacity(0.1) : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isMyReaction ? AppColors.primaryPink : AppColors.lightGrey),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(r.emoji, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  Text('${r.count}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isMyReaction ? AppColors.primaryPink : AppColors.textSecondary)),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }
