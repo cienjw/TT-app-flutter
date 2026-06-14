@@ -6,44 +6,19 @@ import '../../../shared/widgets/profile_avatar.dart';
 import '../../chat/data/group_repository.dart';
 import '../../chat/domain/chat_provider.dart';
 
-class BlockedUsersScreen extends ConsumerStatefulWidget {
+class BlockedUsersScreen extends ConsumerWidget {
   const BlockedUsersScreen({super.key});
-  @override
-  ConsumerState<BlockedUsersScreen> createState() => _BlockedUsersScreenState();
-}
 
-class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
-  List<GroupMember>? _blocked;
-  String? _error;
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final list = await ref.read(groupRepoProvider).getBlockedUsers();
-      if (!mounted) return;
-      setState(() { _blocked = list; _loading = false; });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() { _error = '$e'; _loading = false; });
-    }
-  }
-
-  Future<void> _unblock(GroupMember m) async {
+  Future<void> _unblock(BuildContext context, WidgetRef ref, GroupMember m) async {
     try {
       await ref.read(groupRepoProvider).unblockUser(m.id);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${m.nickname} 차단을 해제했어요.')));
-      _load();
+      ref.invalidate(blockedUsersProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${m.nickname} 차단을 해제했어요.')));
+      }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('해제 실패: $e')));
       }
@@ -51,74 +26,47 @@ class _BlockedUsersScreenState extends ConsumerState<BlockedUsersScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final blocked = _blocked ?? [];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(blockedUsersProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text('차단한 사용자',
             style: AppTextStyles.headline2.copyWith(color: context.cs.onSurface)),
       ),
-      body: Column(
-        children: [
-          // 🔴 임시 디버그 배너 (원인 확인 후 제거)
-          Container(
-            width: double.infinity,
-            color: Colors.red,
-            padding: const EdgeInsets.all(8),
-            child: Text(
-              'loading=$_loading / error=$_error / count=${_blocked?.length}',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ),
-          Expanded(
-            child: _loading
-                ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(color: context.cs.onSurface),
-                      const SizedBox(height: 12),
-                      Text('불러오는 중...',
-                          style: AppTextStyles.body.copyWith(color: context.cs.onSurface)),
-                    ],
-                  ),
-                )
-                : _error != null
-                ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text('불러오기 실패:\n$_error',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: context.cs.error, fontSize: 14)),
-              ),
-            )
-                : blocked.isEmpty
-                ? Center(
-              child: Text('차단한 사용자가 없어요',
+      body: async.when(
+        data: (blocked) => blocked.isEmpty
+            ? Center(
+          child: Text('차단한 사용자가 없어요',
+              style: AppTextStyles.body
+                  .copyWith(color: context.cs.onSurfaceVariant)),
+        )
+            : ListView.separated(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: blocked.length,
+          separatorBuilder: (_, __) =>
+              Divider(height: 1, color: context.cs.surfaceContainerHighest),
+          itemBuilder: (context, i) {
+            final m = blocked[i];
+            return ListTile(
+              leading: ProfileAvatar(imageId: m.profileImg, radius: 20),
+              title: Text(m.nickname,
                   style: AppTextStyles.body
-                      .copyWith(color: context.cs.onSurfaceVariant)),
-            )
-                : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: blocked.length,
-              separatorBuilder: (_, __) => Divider(
-                  height: 1, color: context.cs.surfaceContainerHighest),
-              itemBuilder: (context, i) {
-                final m = blocked[i];
-                return ListTile(
-                  leading: ProfileAvatar(imageId: m.profileImg, radius: 20),
-                  title: Text(m.nickname,
-                      style: AppTextStyles.body
-                          .copyWith(color: context.cs.onSurface)),
-                  trailing: OutlinedButton(
-                    onPressed: () => _unblock(m),
-                    child: const Text('차단 해제'),
-                  ),
-                );
-              },
-            ),
+                      .copyWith(color: context.cs.onSurface)),
+              trailing: OutlinedButton(
+                onPressed: () => _unblock(context, ref, m),
+                child: const Text('차단 해제'),
+              ),
+            );
+          },
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('목록을 불러오지 못했어요: $e',
+                textAlign: TextAlign.center, style: AppTextStyles.caption),
           ),
-        ],
+        ),
       ),
     );
   }

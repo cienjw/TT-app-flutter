@@ -7,3 +7,8 @@ final groupRepoProvider = Provider((_) => GroupRepository());
 final myGroupsProvider = FutureProvider<List<GroupSummary>>((ref) async {
   return ref.read(groupRepoProvider).getMyGroups();
 });
+
+final blockedUsersProvider =
+FutureProvider.autoDispose<List<GroupMember>>((ref) async {
+  return ref.read(groupRepoProvider).getBlockedUsers();
+});

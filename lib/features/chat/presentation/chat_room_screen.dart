@@ -429,7 +429,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$_groupName (${widget.memberCount}명)', style: AppTextStyles.title),
+        title: Text('$_groupName (${widget.memberCount}명)',
+            style: AppTextStyles.title.copyWith(color: context.cs.onSurface)),
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.person_2_fill),

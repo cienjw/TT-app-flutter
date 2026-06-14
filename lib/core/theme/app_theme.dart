@@ -61,6 +61,7 @@ class AppTheme {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         foregroundColor: onSurface,
+        titleTextStyle: AppTextStyles.headline2.copyWith(color: onSurface),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

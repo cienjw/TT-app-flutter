@@ -62,7 +62,6 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('프로필'),
-        titleTextStyle: AppTextStyles.headline2,
       ),
       body: profileAsync.when(
         data: (profile) => ListView(

@@ -34,6 +34,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _searchCtrl.dispose();   // ← 여기로 이동
     super.dispose();
   }
 
@@ -94,7 +95,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
   Future<void> _cancelMatching() async {
     _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
-    _searchCtrl.dispose();
     _pollTimer = null;
     try {
       await ref.read(groupRepoProvider).cancelMatching();
@@ -127,7 +127,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           onChanged: (v) => setState(() => _searchQuery = v),
         )
             : const Text('채팅방'),
-        titleTextStyle: AppTextStyles.headline2,
         actions: [
           IconButton(
             icon: Icon(_isSearching ? CupertinoIcons.xmark : CupertinoIcons.search),
