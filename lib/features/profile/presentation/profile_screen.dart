@@ -11,6 +11,7 @@ import '../domain/profile_provider.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
+import 'blocked_users_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -80,9 +81,12 @@ class ProfileScreen extends ConsumerWidget {
               onTap: () {},
             ),
             _MenuTile(
-              icon: CupertinoIcons.nosign,
-              label: '차단한 사용자',
-              onTap: () {},
+              icon: Icons.block_flipped,          // (네 현재 아이콘 그대로)
+              label: '차단 관리',
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+              ),
             ),
             _MenuTile(
               icon: CupertinoIcons.question_circle,

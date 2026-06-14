@@ -64,26 +64,26 @@ class GroupRepository {
   Future<void> cancelMatching() async {
     await ApiClient.dio.delete('/api/matching');
   }
-}
 
-Future<void> reportUser(int targetId, {String? reason}) async {
-  await ApiClient.dio.post('/api/users/report',
-      data: {'target_id': targetId, 'reason': reason});
-}
+  Future<void> reportUser(int targetId, {String? reason}) async {
+    await ApiClient.dio.post('/api/users/report',
+        data: {'target_id': targetId, 'reason': reason});
+  }
 
-Future<void> blockUser(int targetId) async {
-  await ApiClient.dio.post('/api/users/block', data: {'target_id': targetId});
-}
+  Future<void> blockUser(int targetId) async {
+    await ApiClient.dio.post('/api/users/block', data: {'target_id': targetId});
+  }
 
-Future<void> unblockUser(int targetId) async {
-  await ApiClient.dio.delete('/api/users/block/$targetId');
-}
+  Future<void> unblockUser(int targetId) async {
+    await ApiClient.dio.delete('/api/users/block/$targetId');
+  }
 
-Future<List<GroupMember>> getBlockedUsers() async {
-  final res = await ApiClient.dio.get('/api/users/blocks');
-  return (res.data as List)
-      .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
-      .toList();
+  Future<List<GroupMember>> getBlockedUsers() async {
+    final res = await ApiClient.dio.get('/api/users/blocks');
+    return (res.data as List)
+        .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
 }
 
 class GroupMember {

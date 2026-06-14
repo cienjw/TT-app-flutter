@@ -1,29 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
 import '../../main/presentation/main_screen.dart';
+import '../../chat/domain/chat_provider.dart'; // groupRepoProvider
 import '../data/survey_data.dart';
 
-class SurveyResultScreen extends StatelessWidget {
+class SurveyResultScreen extends ConsumerWidget {
   final SurveyResult result;
   const SurveyResultScreen({super.key, required this.result});
 
-  Future<void> _start(BuildContext context) async {
+  Future<void> _start(WidgetRef ref, BuildContext context) async {
     try {
       await ApiClient.dio.put('/api/users/me/survey', data: {
-        'fields': result.fields.map((f) => f.name).toList(), // ['tech','content',...]
+        'fields': result.fields.map((f) => f.name).toList(),
         'depth': result.depth,
         'virtuality': result.virtuality,
-        'collab': result.collab.name,    // 'lead' / 'follow'
-        'purpose': result.purpose.name,  // 'growth' / 'vibe'
-        'mbti': result.mbti,             // 4글자 or null
+        'collab': result.collab.name,
+        'purpose': result.purpose.name,
+        'mbti': result.mbti,
       });
+      // 설문 완료 → 홈 진입과 동시에 자동으로 매칭 대기열 등록
+      await ref.read(groupRepoProvider).joinMatching(threshold: 0.3);
     } catch (_) {
-      // 발표 데모 중엔 저장 실패해도 흐름은 막지 않음
+      // 발표 데모 중엔 실패해도 흐름은 막지 않음
     }
     await SecureStorage.setOnboardingComplete();
     if (!context.mounted) return;
@@ -35,7 +39,7 @@ class SurveyResultScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -85,7 +89,7 @@ class SurveyResultScreen extends StatelessWidget {
                         .copyWith(color: context.cs.primary)),
               ],
               const Spacer(),
-              AppButton(label: '시작하기', onPressed: () => _start(context)),
+              AppButton(label: '시작하기', onPressed: () => _start(ref, context)),
               const SizedBox(height: 24),
             ],
           ),

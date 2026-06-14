@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/theme/app_colors.dart';
@@ -191,6 +192,14 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     try {
       final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
       if (!mounted) return;
+
+      // 본인 맨 위, 나머지는 이름순 정렬
+      final members = [...detail.members]..sort((a, b) {
+        if (a.id == _myUserId) return -1;
+        if (b.id == _myUserId) return 1;
+        return a.nickname.compareTo(b.nickname);
+      });
+
       showModalBottomSheet(
         context: context,
         backgroundColor: context.cs.surface,
@@ -204,22 +213,51 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('참여 멤버 ${detail.members.length}명', style: AppTextStyles.title),
+                Text('참여 멤버 ${members.length}명', style: AppTextStyles.title),
                 const SizedBox(height: 12),
-                ...detail.members.map((m) => GestureDetector(
-                  onTap: () => _showMemberActions(m),
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
+                ...members.map((m) {
+                  final isMe = m.id == _myUserId;
+                  final row = Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       children: [
                         ProfileAvatar(imageId: m.profileImg, radius: 20),
                         const SizedBox(width: 12),
                         Text(m.nickname, style: AppTextStyles.body),
+                        if (isMe) ...[
+                          const SizedBox(width: 6),
+                          Text('(나)', style: AppTextStyles.caption),
+                        ],
                       ],
                     ),
-                  ),
-                )),
+                  );
+                  // 본인은 슬라이드 액션 없음
+                  if (isMe) return row;
+                  return Slidable(
+                    key: ValueKey(m.id),
+                    endActionPane: ActionPane(
+                      motion: const DrawerMotion(),
+                      extentRatio: 0.5,
+                      children: [
+                        SlidableAction(
+                          onPressed: (_) => _reportMember(m),
+                          backgroundColor: context.cs.surfaceContainerHighest,
+                          foregroundColor: context.cs.onSurface,
+                          icon: CupertinoIcons.exclamationmark_triangle,
+                          label: '신고',
+                        ),
+                        SlidableAction(
+                          onPressed: (_) => _blockMember(m),
+                          backgroundColor: context.cs.error,
+                          foregroundColor: Colors.white,
+                          icon: CupertinoIcons.nosign,
+                          label: '차단',
+                        ),
+                      ],
+                    ),
+                    child: row,
+                  );
+                }),
               ],
             ),
           ),
@@ -231,40 +269,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
       }
     }
-  }
-
-  void _showMemberActions(GroupMember m) {
-    if (m.id == _myUserId) return; // 본인은 제외
-    Navigator.pop(context); // 멤버 시트 닫기
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.cs.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(m.nickname, style: AppTextStyles.title),
-            ),
-            ListTile(
-              leading: const Icon(CupertinoIcons.exclamationmark_triangle),
-              title: const Text('신고하기'),
-              onTap: () { Navigator.pop(context); _reportMember(m); },
-            ),
-            ListTile(
-              leading: Icon(CupertinoIcons.nosign, color: context.cs.error),
-              title: Text('차단하기', style: TextStyle(color: context.cs.error)),
-              onTap: () { Navigator.pop(context); _blockMember(m); },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _reportMember(GroupMember m) async {
