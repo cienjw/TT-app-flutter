@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
@@ -13,37 +12,52 @@ class TermsScreen extends StatefulWidget {
 }
 
 class _TermsScreenState extends State<TermsScreen> {
-  bool _terms = false;       // (필수) 이용약관
-  bool _privacy = false;     // (필수) 개인정보 처리방침
-  bool _marketing = false;   // (선택) 마케팅
+  bool _terms = false;
+  bool _privacy = false;
+  bool _marketing = false;
 
   bool get _canProceed => _terms && _privacy;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
-              Text('약관에\n동의해주세요', style: AppTextStyles.headline1),
+              const SizedBox(height: 20),
+              const Text(
+                'Meetory 서비스 이용을 위해\n약관에 동의해주세요',
+                style: AppTextStyles.headline2,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '안전하고 즐거운 만남을 위해\n꼭 필요한 절차예요.',
+                style: AppTextStyles.bodySmall,
+              ),
               const SizedBox(height: 48),
 
               _TermsItem(
-                label: '(필수) 이용약관',
+                label: '(필수) 이용약관 동의',
                 value: _terms,
                 onChanged: (v) => setState(() => _terms = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _TermsItem(
-                label: '(필수) 개인정보 처리방침',
+                label: '(필수) 개인정보 처리방침 동의',
                 value: _privacy,
                 onChanged: (v) => setState(() => _privacy = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               _TermsItem(
                 label: '(선택) 마케팅 정보 수신 동의',
                 value: _marketing,
@@ -53,7 +67,7 @@ class _TermsScreenState extends State<TermsScreen> {
               const Spacer(),
 
               AppButton(
-                label: '다음',
+                label: '동의하고 다음으로',
                 onPressed: _canProceed
                     ? () => Navigator.push(
                   context,
@@ -86,23 +100,36 @@ class _TermsItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => onChanged(!value),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.lightGrey,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: value ? AppColors.primaryPink.withOpacity(0.5) : Colors.transparent,
+            width: 1,
+          ),
+        ),
         child: Row(
           children: [
-            Checkbox(
-              value: value,
-              onChanged: (v) => onChanged(v ?? false),
-              activeColor: context.cs.primary,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4)),
+            Icon(
+              value ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+              color: value ? AppColors.primaryPink : AppColors.textHint,
+              size: 24,
             ),
+            const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTextStyles.body),
+              child: Text(
+                label,
+                style: AppTextStyles.body.copyWith(
+                  fontSize: 15,
+                  color: value ? AppColors.textPrimary : AppColors.textSecondary,
+                  fontWeight: value ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
             ),
-            Icon(CupertinoIcons.chevron_right,
-                color: context.cs.onSurfaceVariant, size: 20),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 20),
           ],
         ),
       ),

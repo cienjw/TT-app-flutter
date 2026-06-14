@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../../footprints/presentation/footprints_screen.dart';
+import '../../matching/presentation/home_screen.dart';
 import '../../chat/presentation/chatrooms_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
+import '../../../core/theme/app_colors.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -12,10 +12,10 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 1; // 기본 탭: 채팅방
+  int _currentIndex = 0; // 기본 탭: 홈
 
   final _screens = const [
-    FootprintsScreen(),
+    HomeScreen(),
     ChatroomsScreen(),
     ProfileScreen(),
   ];
@@ -24,27 +24,41 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.map),
-            selectedIcon: Icon(CupertinoIcons.map_fill),
-            label: '발자취',
-          ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.chat_bubble),
-            selectedIcon: Icon(CupertinoIcons.chat_bubble_fill),
-            label: '채팅방',
-          ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.person),
-            selectedIcon: Icon(CupertinoIcons.person_fill),
-            label: '프로필',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          selectedIndex: _currentIndex,
+          indicatorColor: AppColors.primaryPink.withOpacity(0.1),
+          onDestinationSelected: (i) => setState(() => _currentIndex = i),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, color: AppColors.textSecondary),
+              selectedIcon: Icon(Icons.home_rounded, color: AppColors.primaryPink),
+              label: '홈',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textSecondary),
+              selectedIcon: Icon(Icons.chat_bubble_rounded, color: AppColors.primaryPink),
+              label: '채팅',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded, color: AppColors.textSecondary),
+              selectedIcon: Icon(Icons.person_rounded, color: AppColors.primaryPink),
+              label: '프로필',
+            ),
+          ],
+        ),
       ),
     );
   }
