@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -23,11 +22,11 @@ class ProfileScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: const Text('취소', style: TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('로그아웃', style: TextStyle(color: context.cs.error)),
+            child: const Text('로그아웃', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -35,18 +34,15 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirmed != true) return;
 
-    // 소켓 끊고 토큰/온보딩 플래그 전부 삭제
     SocketClient.disconnect();
     await SecureStorage.clearAll();
 
-    // 강제 초기화 추가 ✅
     ref.invalidate(myProfileProvider);
     ref.invalidate(myGroupsProvider);
     ref.invalidate(footprintsProvider);
 
     if (!context.mounted) return;
 
-    // 로그인 화면으로 완전히 초기화 (invalidate 대신 화면 전환으로 처리)
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
@@ -58,39 +54,44 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(myProfileProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('프로필'),
-        titleTextStyle: AppTextStyles.headline2,
       ),
       body: profileAsync.when(
         data: (profile) => ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           children: [
+            const SizedBox(height: 24),
             _buildProfileHeader(context, profile),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
+            const SizedBox(height: 40),
+            Text('계정 설정', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             _MenuTile(
-              icon: CupertinoIcons.pencil,
+              icon: Icons.edit_outlined,
               label: '내 정보 수정',
-              onTap: () {}, // 추후 구현
+              onTap: () {},
             ),
             _MenuTile(
-              icon: CupertinoIcons.bell,
+              icon: Icons.notifications_none_rounded,
               label: '알림 설정',
               onTap: () {},
             ),
             _MenuTile(
-              icon: CupertinoIcons.nosign,
-              label: '차단한 사용자',
+              icon: Icons.block_flipped,
+              label: '차단 관리',
               onTap: () {},
             ),
+            const SizedBox(height: 24),
+            Text('기타', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             _MenuTile(
-              icon: CupertinoIcons.question_circle,
+              icon: Icons.help_outline_rounded,
               label: '이용 가이드',
               onTap: () {},
             ),
-            const Divider(height: 1),
             _MenuTile(
-              icon: CupertinoIcons.square_arrow_right,
+              icon: Icons.logout_rounded,
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
@@ -109,32 +110,51 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  // 시그니처에 BuildContext 추가
   Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundBlue.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(28),
+      ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 36,
-            backgroundColor: context.cs.surfaceContainerHighest,
-            child: Icon(CupertinoIcons.person_fill,
-                size: 40, color: context.cs.onSurfaceVariant),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primaryBlue, width: 2),
+            ),
+            child: const CircleAvatar(
+              radius: 36,
+              backgroundColor: AppColors.backgroundBlue,
+              child: Icon(Icons.person_rounded, size: 40, color: AppColors.primaryBlue),
+            ),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(profile.nickname, style: AppTextStyles.headline2),
-                const SizedBox(height: 4),
-                Text(
-                  profile.interests.isEmpty
-                      ? '관심사를 설정해보세요'
-                      : profile.interests.join(', '),
-                  style: AppTextStyles.caption,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: profile.interests.isEmpty
+                      ? [const Text('관심사를 설정해보세요', style: AppTextStyles.caption)]
+                      : profile.interests.take(3).map((interest) => Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      interest,
+                      style: const TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold),
+                    ),
+                  )).toList(),
                 ),
               ],
             ),
@@ -160,14 +180,24 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? context.cs.error : context.cs.onSurface;
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(label, style: AppTextStyles.body.copyWith(color: color)),
-      trailing: isDestructive
-          ? null
-          : Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
+    final color = isDestructive ? AppColors.error : AppColors.textPrimary;
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(label, style: AppTextStyles.body.copyWith(color: color, fontSize: 16)),
+            ),
+            if (!isDestructive)
+              const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+          ],
+        ),
+      ),
     );
   }
 }

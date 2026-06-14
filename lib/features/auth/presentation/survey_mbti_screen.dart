@@ -3,6 +3,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../data/survey_data.dart';
 import 'survey_result_screen.dart';
+import '../../../shared/widgets/app_button.dart';
 
 class SurveyMbtiScreen extends StatefulWidget {
   final List<SurveyOption> answers;
@@ -13,7 +14,6 @@ class SurveyMbtiScreen extends StatefulWidget {
 }
 
 class _SurveyMbtiScreenState extends State<SurveyMbtiScreen> {
-  // 4개 축, 각 축에서 하나 선택
   static const _axes = [['E', 'I'], ['S', 'N'], ['T', 'F'], ['J', 'P']];
   final List<String?> _picked = [null, null, null, null];
 
@@ -31,23 +31,34 @@ class _SurveyMbtiScreenState extends State<SurveyMbtiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(),
-              Text('당신의 취향은\n완벽히 파악했어요!',
-                  style: AppTextStyles.headline1),
+              const SizedBox(height: 20),
+              const Text(
+                '거의 다 왔어요!\n마지막으로 MBTI를 알려주세요',
+                style: AppTextStyles.headline2,
+              ),
               const SizedBox(height: 12),
-              Text('마지막으로, 당신의 MBTI는 무엇인가요?',
-                  style: AppTextStyles.body
-                      .copyWith(color: context.cs.onSurfaceVariant)),
-              const SizedBox(height: 40),
+              Text(
+                '성향을 파악해 더 잘 맞는 대화 상대를\n추천해 드릴게요.',
+                style: AppTextStyles.bodySmall,
+              ),
+              const SizedBox(height: 48),
+              
               ...List.generate(_axes.length, (ai) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
                     children: _axes[ai].map((letter) {
                       final selected = _picked[ai] == letter;
@@ -55,23 +66,34 @@ class _SurveyMbtiScreenState extends State<SurveyMbtiScreen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 6),
                           child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _picked[ai] = letter),
-                            child: Container(
-                              height: 56,
+                            onTap: () => setState(() => _picked[ai] = letter),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              height: 64,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: selected
-                                    ? context.cs.primary
-                                    : context.cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(14),
+                                color: selected ? AppColors.primaryPink : AppColors.lightGrey,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: selected ? AppColors.primaryPink : Colors.transparent,
+                                  width: 2,
+                                ),
+                                boxShadow: selected ? [
+                                  BoxShadow(
+                                    color: AppColors.primaryPink.withOpacity(0.2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 4),
+                                  )
+                                ] : [],
                               ),
-                              child: Text(letter,
-                                  style: AppTextStyles.headline2.copyWith(
-                                    color: selected
-                                        ? context.cs.onPrimary
-                                        : context.cs.onSurface,
-                                  )),
+                              child: Text(
+                                letter,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: selected ? Colors.white : AppColors.textSecondary,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -80,24 +102,23 @@ class _SurveyMbtiScreenState extends State<SurveyMbtiScreen> {
                   ),
                 );
               }),
+              
               const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _complete ? () => _finish(skip: false) : null,
-                  child: const Text('완료'),
-                ),
+              AppButton(
+                label: '완료하기',
+                onPressed: _complete ? () => _finish(skip: false) : null,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Center(
                 child: TextButton(
                   onPressed: () => _finish(skip: true),
-                  child: Text('모르신다면 건너뛰어도 괜찮아요!',
-                      style: AppTextStyles.caption),
+                  child: Text(
+                    'MBTI를 모르신다면 건너뛰어도 괜찮아요!',
+                    style: AppTextStyles.caption.copyWith(decoration: TextDecoration.underline),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
             ],
           ),
         ),
