@@ -21,6 +21,9 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _isWaiting = false;  // 대기열에 올라가 있음
   double _matchThreshold = 0.85;
   Timer? _pollTimer;
+  bool _isSearching = false;
+  final _searchCtrl = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -91,6 +94,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
   Future<void> _cancelMatching() async {
     _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
+    _searchCtrl.dispose();
     _pollTimer = null;
     try {
       await ref.read(groupRepoProvider).cancelMatching();
@@ -108,10 +112,37 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('채팅방'),
+        title: _isSearching
+            ? TextField(
+          controller: _searchCtrl,
+          autofocus: true,
+          style: AppTextStyles.body,
+          cursorColor: context.cs.primary,
+          decoration: InputDecoration(
+            hintText: '채팅방 이름 검색',
+            border: InputBorder.none,
+            hintStyle: AppTextStyles.body
+                .copyWith(color: context.cs.onSurfaceVariant),
+          ),
+          onChanged: (v) => setState(() => _searchQuery = v),
+        )
+            : const Text('채팅방'),
         titleTextStyle: AppTextStyles.headline2,
         actions: [
-          IconButton(icon: const Icon(CupertinoIcons.search), onPressed: () {}),
+          IconButton(
+            icon: Icon(_isSearching ? CupertinoIcons.xmark : CupertinoIcons.search),
+            onPressed: () {
+              setState(() {
+                if (_isSearching) {
+                  _isSearching = false;
+                  _searchQuery = '';
+                  _searchCtrl.clear();
+                } else {
+                  _isSearching = true;
+                }
+              });
+            },
+          ),
         ],
       ),
       body: RefreshIndicator(
@@ -119,12 +150,30 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           children: [
-            _buildMatchingCard(),
-            const SizedBox(height: 24),
+            if (!_isSearching) ...[
+              _buildMatchingCard(),
+              const SizedBox(height: 24),
+            ],
             groupsAsync.when(
-              data: (groups) => groups.isEmpty
-                  ? _emptyState()
-                  : Column(children: groups.map((g) => _buildRoomCard(g)).toList()),
+              data: (groups) {
+                final filtered = _searchQuery.isEmpty
+                    ? groups
+                    : groups
+                    .where((g) => g.name.contains(_searchQuery))
+                    .toList();
+                if (groups.isEmpty) return _emptyState();
+                if (filtered.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: Text("'$_searchQuery'와 일치하는 채팅방이 없어요",
+                          style: AppTextStyles.caption),
+                    ),
+                  );
+                }
+                return Column(
+                    children: filtered.map((g) => _buildRoomCard(g)).toList());
+              },
               loading: () => const Padding(
                 padding: EdgeInsets.all(40),
                 child: Center(child: CircularProgressIndicator()),

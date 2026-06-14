@@ -193,7 +193,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
       if (!mounted) return;
 
-      // 본인 맨 위, 나머지는 이름순 정렬
       final members = [...detail.members]..sort((a, b) {
         if (a.id == _myUserId) return -1;
         if (b.id == _myUserId) return 1;
@@ -206,59 +205,76 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        builder: (_) => SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('참여 멤버 ${members.length}명', style: AppTextStyles.title),
-                const SizedBox(height: 12),
-                ...members.map((m) {
-                  final isMe = m.id == _myUserId;
-                  final row = Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      children: [
-                        ProfileAvatar(imageId: m.profileImg, radius: 20),
-                        const SizedBox(width: 12),
-                        Text(m.nickname, style: AppTextStyles.body),
-                        if (isMe) ...[
-                          const SizedBox(width: 6),
-                          Text('(나)', style: AppTextStyles.caption),
+        builder: (_) => StatefulBuilder(
+          builder: (context, setModalState) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('참여 멤버 ${members.length}명', style: AppTextStyles.title),
+                  const SizedBox(height: 12),
+                  ...members.map((m) {
+                    final isMe = m.id == _myUserId;
+                    final isBlocked = _blockedIds.contains(m.id);
+                    final row = Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        children: [
+                          ProfileAvatar(imageId: m.profileImg, radius: 20),
+                          const SizedBox(width: 12),
+                          Text(m.nickname, style: AppTextStyles.body),
+                          if (isMe) ...[
+                            const SizedBox(width: 6),
+                            Text('(나)', style: AppTextStyles.caption),
+                          ],
+                          if (isBlocked) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: context.cs.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text('차단됨', style: AppTextStyles.caption),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  );
-                  // 본인은 슬라이드 액션 없음
-                  if (isMe) return row;
-                  return Slidable(
-                    key: ValueKey(m.id),
-                    endActionPane: ActionPane(
-                      motion: const DrawerMotion(),
-                      extentRatio: 0.5,
-                      children: [
-                        SlidableAction(
-                          onPressed: (_) => _reportMember(m),
-                          backgroundColor: context.cs.surfaceContainerHighest,
-                          foregroundColor: context.cs.onSurface,
-                          icon: CupertinoIcons.exclamationmark_triangle,
-                          label: '신고',
-                        ),
-                        SlidableAction(
-                          onPressed: (_) => _blockMember(m),
-                          backgroundColor: context.cs.error,
-                          foregroundColor: Colors.white,
-                          icon: CupertinoIcons.nosign,
-                          label: '차단',
-                        ),
-                      ],
-                    ),
-                    child: row,
-                  );
-                }),
-              ],
+                      ),
+                    );
+                    if (isMe || isBlocked) return row;
+                    return Slidable(
+                      key: ValueKey(m.id),
+                      endActionPane: ActionPane(
+                        motion: const DrawerMotion(),
+                        extentRatio: 0.5,
+                        children: [
+                          SlidableAction(
+                            onPressed: (_) => _reportMember(m),
+                            backgroundColor: context.cs.surfaceContainerHighest,
+                            foregroundColor: context.cs.onSurface,
+                            icon: CupertinoIcons.exclamationmark_triangle,
+                            label: '신고',
+                          ),
+                          SlidableAction(
+                            onPressed: (_) async {
+                              await _blockMember(m);
+                              setModalState(() {}); // 시트 즉시 갱신
+                            },
+                            backgroundColor: context.cs.error,
+                            foregroundColor: Colors.white,
+                            icon: CupertinoIcons.nosign,
+                            label: '차단',
+                          ),
+                        ],
+                      ),
+                      child: row,
+                    );
+                  }),
+                ],
+              ),
             ),
           ),
         ),
