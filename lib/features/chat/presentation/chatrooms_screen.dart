@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,28 +17,89 @@ class ChatroomsScreen extends ConsumerStatefulWidget {
 
 class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _bluetoothOn = false;
-  bool _isMatching = false;
+  bool _isMatching = false; // enqueue 요청 중
+  bool _isWaiting = false;  // 대기열에 올라가 있음
   double _matchThreshold = 0.85;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkMatchingStatus(); // 화면 진입 시 이미 대기 중인지 복원
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkMatchingStatus() async {
+    try {
+      final status = await ref.read(groupRepoProvider).getMatchingStatus();
+      if (!mounted) return;
+      if (status == 'waiting') {
+        setState(() => _isWaiting = true);
+        _startPolling();
+      }
+    } catch (_) {/* 무시 */}
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+      ref.invalidate(myGroupsProvider); // 새 방 생기면 목록에 반영
+      try {
+        final status = await ref.read(groupRepoProvider).getMatchingStatus();
+        if (!mounted) return;
+        if (status != 'waiting') {
+          _stopWaiting();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('매칭 완료! 새 모임이 열렸어요.')),
+          );
+        }
+      } catch (_) {/* 무시 */}
+    });
+  }
+
+  void _stopWaiting() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    if (mounted) setState(() => _isWaiting = false);
+  }
 
   Future<void> _runMatching() async {
     setState(() => _isMatching = true);
     try {
       await ref.read(groupRepoProvider).joinMatching(threshold: _matchThreshold);
-      // 목록 새로고침
-      ref.invalidate(myGroupsProvider);
       if (!mounted) return;
+      setState(() => _isWaiting = true);
+      _startPolling();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('새로운 모임에 매칭되었어요!')),
+        const SnackBar(content: Text('대기열에 등록됐어요. 맞는 사람을 찾는 중...')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        // _runMatching 스낵바
         SnackBar(content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isMatching = false);
     }
+  }
+
+  Future<void> _cancelMatching() async {
+    _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
+    _pollTimer = null;
+    try {
+      await ref.read(groupRepoProvider).cancelMatching();
+    } catch (_) {/* 무시 */}
+    if (!mounted) return;
+    setState(() => _isWaiting = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('매칭 대기를 취소했어요.')),
+    );
   }
 
   @override
@@ -59,23 +121,17 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           children: [
             _buildMatchingCard(),
             const SizedBox(height: 24),
-
             groupsAsync.when(
               data: (groups) => groups.isEmpty
                   ? _emptyState()
-                  : Column(
-                children: groups
-                    .map((g) => _buildRoomCard(g))
-                    .toList(),
-              ),
+                  : Column(children: groups.map((g) => _buildRoomCard(g)).toList()),
               loading: () => const Padding(
                 padding: EdgeInsets.all(40),
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(20),
-                child: Text('목록을 불러오지 못했어요: $e',
-                    style: AppTextStyles.caption),
+                child: Text('목록을 불러오지 못했어요: $e', style: AppTextStyles.caption),
               ),
             ),
           ],
@@ -85,6 +141,8 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Widget _buildMatchingCard() {
+    if (_isWaiting) return _buildWaitingCard();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -99,7 +157,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           const SizedBox(height: 4),
           Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
           const SizedBox(height: 18),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
@@ -135,17 +192,14 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             ),
           ),
           const SizedBox(height: 18),
-
           Row(
             children: [
               Text('관심사 일치도',
-                  style: AppTextStyles.body
-                      .copyWith(fontWeight: FontWeight.w600)),
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
               const Spacer(),
               Text('${(_matchThreshold * 100).round()}% 이상',
                   style: AppTextStyles.body.copyWith(
-                      color: context.cs.primary,
-                      fontWeight: FontWeight.w700)),
+                      color: context.cs.primary, fontWeight: FontWeight.w700)),
             ],
           ),
           SliderTheme(
@@ -171,7 +225,6 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: 20),
-
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -183,6 +236,41 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: context.cs.onPrimary))
                   : const Text('매칭하기'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: context.cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('맞는 친구를 찾는 중', style: AppTextStyles.title),
+              const SizedBox(width: 10),
+              _PulsingDots(color: context.cs.primary),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text('조건에 맞는 사람이 모이면 자동으로 모임이 열려요',
+              textAlign: TextAlign.center, style: AppTextStyles.caption),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: _cancelMatching,
+              child: const Text('매칭 취소'),
             ),
           ),
         ],
@@ -226,12 +314,9 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                   Text('${group.name} (${group.memberCount}명)',
                       style: AppTextStyles.title),
                   const SizedBox(height: 4),
-                  Text(
-                    group.lastMessage ?? '아직 대화가 없어요',
-                    style: AppTextStyles.caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(group.lastMessage ?? '아직 대화가 없어요',
+                      style: AppTextStyles.caption,
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -249,6 +334,58 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         child: Text('아직 참여한 채팅방이 없어요.\n매칭하기를 눌러 시작해보세요!',
             textAlign: TextAlign.center, style: AppTextStyles.caption),
       ),
+    );
+  }
+}
+
+// 대기 중 맥동하는 점 3개
+class _PulsingDots extends StatefulWidget {
+  final Color color;
+  const _PulsingDots({required this.color});
+
+  @override
+  State<_PulsingDots> createState() => _PulsingDotsState();
+}
+
+class _PulsingDotsState extends State<_PulsingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000))
+      ..repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (i) {
+        return AnimatedBuilder(
+          animation: _c,
+          builder: (_, __) {
+            final t = (_c.value - i * 0.18) % 1.0;
+            final pulse = (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0);
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: 7, height: 7,
+              decoration: BoxDecoration(
+                color: widget.color.withOpacity(0.3 + 0.7 * pulse),
+                shape: BoxShape.circle,
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

@@ -32,10 +32,22 @@ class GroupRepository {
         .toList();
   }
 
-  Future<int> joinMatching({double threshold = 0.7}) async {
+  // 대기열 등록 → 'waiting'
+  Future<String> joinMatching({double threshold = 0.85}) async {
     final res = await ApiClient.dio.post('/api/matching/join', data: {
       'threshold': threshold,
     });
-    return res.data['groupId'] as int;
+    return res.data['status'] as String? ?? 'waiting';
+  }
+
+  // 대기 상태 조회 → 'waiting' | 'idle'
+  Future<String> getMatchingStatus() async {
+    final res = await ApiClient.dio.get('/api/matching/status');
+    return res.data['status'] as String? ?? 'idle';
+  }
+
+  // 대기 취소
+  Future<void> cancelMatching() async {
+    await ApiClient.dio.delete('/api/matching');
   }
 }

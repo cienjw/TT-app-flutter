@@ -5,7 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/app_button.dart';
-import 'interest_screen.dart';
+import 'survey_intro_screen.dart';
 
 class NicknameScreen extends ConsumerStatefulWidget {
   const NicknameScreen({super.key});
@@ -46,7 +46,7 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
       if (!mounted) return;
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const InterestScreen()),
+        MaterialPageRoute(builder: (_) => const SurveyIntroScreen()),
       );
     } catch (e) {
       if (!mounted) return;
