@@ -152,7 +152,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     _scrollToBottom();
     _markReadLatest();
   }
-
   void _onReactionUpdated(dynamic data) {
     final map = Map<String, dynamic>.from(data);
     final messageId = (map['messageId'] as num).toInt();
@@ -175,10 +174,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   void _showReactionPicker(Message msg) {
-    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      backgroundColor: theme.cardColor,
+      backgroundColor: context.cs.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -222,11 +220,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     final readers = _members.where((mem) =>
     mem.id == m.senderId || (_lastRead[mem.id] ?? 0) >= m.id
     ).length;
-    return _members.length - readers;
+    return _members.length - readers; // 0이면 안 보임
   }
 
   Future<void> _showMembers() async {
-    final theme = Theme.of(context);
     try {
       final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
       if (!mounted) return;
@@ -239,7 +236,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
       showModalBottomSheet(
         context: context,
-        backgroundColor: theme.cardColor,
+        backgroundColor: context.cs.surface,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -251,7 +248,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('참여 멤버 ${members.length}명', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
+                  Text('참여 멤버 ${members.length}명', style: AppTextStyles.title),
                   const SizedBox(height: 12),
                   ...members.map((m) {
                     final isMe = m.id == _myUserId;
@@ -262,20 +259,21 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                         children: [
                           ProfileAvatar(imageId: m.profileImg, radius: 20),
                           const SizedBox(width: 12),
-                          Text(m.nickname, style: AppTextStyles.body.copyWith(color: theme.textTheme.bodyLarge?.color)),
+                          Text(m.nickname, style: AppTextStyles.body),
                           if (isMe) ...[
                             const SizedBox(width: 6),
-                            Text('(나)', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
+                            Text('(나)', style: AppTextStyles.caption),
                           ],
                           if (isBlocked) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: theme.dividerColor,
+                                color: context.cs.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text('차단됨', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
+                              child: Text('차단됨', style: AppTextStyles.caption),
                             ),
                           ],
                         ],
@@ -290,17 +288,17 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                         children: [
                           SlidableAction(
                             onPressed: (_) => _reportMember(m),
-                            backgroundColor: theme.dividerColor,
-                            foregroundColor: theme.textTheme.bodyLarge?.color,
+                            backgroundColor: context.cs.surfaceContainerHighest,
+                            foregroundColor: context.cs.onSurface,
                             icon: CupertinoIcons.exclamationmark_triangle,
                             label: '신고',
                           ),
                           SlidableAction(
                             onPressed: (_) async {
                               await _blockMember(m);
-                              setModalState(() {});
+                              setModalState(() {}); // 시트 즉시 갱신
                             },
-                            backgroundColor: Colors.redAccent,
+                            backgroundColor: context.cs.error,
                             foregroundColor: Colors.white,
                             icon: CupertinoIcons.nosign,
                             label: '차단',
@@ -318,33 +316,28 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('멤버를 불러오지 못했어요: $e')));
       }
     }
   }
 
   Future<void> _reportMember(GroupMember m) async {
-    final theme = Theme.of(context);
     final controller = TextEditingController();
     final reason = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('${m.nickname} 신고', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: Text('${m.nickname} 신고'),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          decoration: InputDecoration(
-            hintText: '신고 사유 (선택)',
-            hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
-          ),
+          decoration: const InputDecoration(hintText: '신고 사유 (선택)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text('신고', style: TextStyle(color: theme.primaryColor)),
+            child: const Text('신고'),
           ),
         ],
       ),
@@ -353,28 +346,28 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     try {
       await ref.read(groupRepoProvider).reportUser(m.id, reason: reason);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('신고가 접수됐어요.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('신고가 접수됐어요.')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('신고 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('신고 실패: $e')));
       }
     }
   }
 
   Future<void> _blockMember(GroupMember m) async {
-    final theme = Theme.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('${m.nickname} 차단', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-        content: Text('차단하면 이후 이 사람의 메시지가 보이지 않고, 새 매칭에서도 제외돼요.', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: Text('${m.nickname} 차단'),
+        content: const Text('차단하면 이후 이 사람의 메시지가 보이지 않고, 새 매칭에서도 제외돼요.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('차단', style: TextStyle(color: Colors.redAccent)),
+            child: Text('차단', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -383,37 +376,33 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     try {
       await ref.read(groupRepoProvider).blockUser(m.id);
       if (!mounted) return;
-      setState(() => _blockedIds.add(m.id));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('차단했어요.')));
+      setState(() => _blockedIds.add(m.id)); // 이후 메시지부터 차단
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('차단했어요.')));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('차단 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('차단 실패: $e')));
       }
     }
   }
 
   Future<void> _renameGroup() async {
-    final theme = Theme.of(context);
     final controller = TextEditingController(text: _groupName);
     final newName = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('방 이름 변경', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: const Text('방 이름 변경'),
         content: TextField(
           controller: controller,
           autofocus: true,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          decoration: InputDecoration(
-            hintText: '새 이름',
-            hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
-          ),
+          decoration: const InputDecoration(hintText: '새 이름'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text('변경', style: TextStyle(color: theme.primaryColor)),
+            child: const Text('변경'),
           ),
         ],
       ),
@@ -426,24 +415,23 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ref.invalidate(myGroupsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('변경 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('변경 실패: $e')));
       }
     }
   }
 
   Future<void> _leaveGroup() async {
-    final theme = Theme.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('채팅방 나가기', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-        content: Text('이 모임에서 나갈까요? 다시 들어올 수 없어요.', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: const Text('채팅방 나가기'),
+        content: const Text('이 모임에서 나갈까요? 다시 들어올 수 없어요.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('나가기', style: TextStyle(color: Colors.redAccent)),
+            child: Text('나가기', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -453,10 +441,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       await ref.read(groupRepoProvider).leaveGroup(widget.groupId);
       if (!mounted) return;
       ref.invalidate(myGroupsProvider);
-      Navigator.pop(context);
+      Navigator.pop(context); // 채팅방 화면 닫기
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('나가기 실패: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('나가기 실패: $e')));
       }
     }
   }
@@ -474,27 +463,24 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('$_groupName (${widget.memberCount}명)',
-            style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
+            style: AppTextStyles.title.copyWith(color: context.cs.onSurface)),
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.person_2_fill),
             onPressed: _showMembers,
           ),
           PopupMenuButton<String>(
-            color: theme.cardColor,
             icon: const Icon(CupertinoIcons.ellipsis_vertical),
             onSelected: (v) {
               if (v == 'rename') _renameGroup();
               if (v == 'leave') _leaveGroup();
             },
-            itemBuilder: (_) => [
-              PopupMenuItem(value: 'rename', child: Text('방 이름 변경', style: TextStyle(color: theme.textTheme.bodyLarge?.color))),
-              PopupMenuItem(value: 'leave', child: Text('채팅방 나가기', style: TextStyle(color: Colors.redAccent))),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: 'rename', child: Text('방 이름 변경')),
+              PopupMenuItem(value: 'leave', child: Text('채팅방 나가기')),
             ],
           ),
         ],
@@ -507,7 +493,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                 : _messages.isEmpty
                 ? Center(
                 child: Text('첫 메시지를 보내보세요!',
-                    style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)))
+                    style: AppTextStyles.caption))
                 : ScrollablePositionedList.builder(
               itemScrollController: _itemScrollController,
               padding: const EdgeInsets.all(16),
@@ -532,25 +518,25 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               },
             ),
           ),
-          if (_replyingTo != null) _buildReplyPreview(theme),
-          _buildInputBar(theme),
+          if (_replyingTo != null) _buildReplyPreview(),
+          _buildInputBar(),
         ],
       ),
     );
   }
 
-  Widget _buildReplyPreview(ThemeData theme) {
+  Widget _buildReplyPreview() {
     final msg = _replyingTo!;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      color: theme.cardColor,
+      color: context.cs.surfaceContainerHighest,
       child: Row(
         children: [
           Container(
             width: 3,
             height: 36,
             decoration: BoxDecoration(
-              color: theme.primaryColor,
+              color: context.cs.primary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -562,19 +548,19 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               children: [
                 Text('${msg.senderNickname}에게 답장',
                     style: AppTextStyles.caption.copyWith(
-                      color: theme.primaryColor,
+                      color: context.cs.primary,
                       fontWeight: FontWeight.w600,
                     )),
                 const SizedBox(height: 2),
                 Text(msg.content,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
+                    style: AppTextStyles.caption),
               ],
             ),
           ),
           IconButton(
-            icon: Icon(CupertinoIcons.xmark, size: 18, color: theme.textTheme.bodyMedium?.color),
+            icon: const Icon(CupertinoIcons.xmark, size: 18),
             onPressed: () => setState(() => _replyingTo = null),
           ),
         ],
@@ -582,10 +568,9 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     );
   }
 
-  Widget _buildInputBar(ThemeData theme) {
+  Widget _buildInputBar() {
     return SafeArea(
-      child: Container(
-        color: theme.scaffoldBackgroundColor,
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Row(
           children: [
@@ -593,28 +578,19 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
               child: TextField(
                 controller: _textController,
                 focusNode: _inputFocus,
-                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: '메시지 입력하기...',
-                  hintStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
-                  filled: true,
-                  fillColor: theme.cardColor,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
             const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: theme.primaryColor,
-              radius: 22,
-              child: IconButton(
-                onPressed: _sendMessage,
-                icon: Icon(CupertinoIcons.paperplane_fill, color: theme.brightness == Brightness.dark ? Colors.black : Colors.white, size: 20),
+            IconButton.filled(
+              onPressed: _sendMessage,
+              icon: const Icon(CupertinoIcons.paperplane_fill),
+              style: IconButton.styleFrom(
+                backgroundColor: context.cs.primary,
+                foregroundColor: context.cs.onPrimary,
               ),
             ),
           ],
@@ -659,7 +635,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final cs = context.cs;
     final message = widget.message;
 
     return GestureDetector(
@@ -678,7 +654,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
           color: widget.highlight
-              ? theme.primaryColor.withOpacity(0.12)
+              ? cs.primary.withOpacity(0.12)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
@@ -692,14 +668,14 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   child: Opacity(
                     opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
                     child: Icon(CupertinoIcons.reply,
-                        color: theme.primaryColor, size: 22),
+                        color: cs.primary, size: 22),
                   ),
                 ),
               ),
             ),
             Transform.translate(
               offset: Offset(_dragExtent, 0),
-              child: _buildContent(context, message, widget.isMine, widget.myUserId, theme),
+              child: _buildContent(context, message, widget.isMine, widget.myUserId),
             ),
           ],
         ),
@@ -708,8 +684,8 @@ class _MessageBubbleState extends State<_MessageBubble> {
   }
 
   Widget _buildContent(
-      BuildContext context, Message message, bool isMine, int? myUserId, ThemeData theme) {
-
+      BuildContext context, Message message, bool isMine, int? myUserId) {
+    final cs = context.cs;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -718,7 +694,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isMine) ...[
-            ProfileAvatar(imageId: message.senderProfileImg, radius: 16),
+            ProfileAvatar(imageId: message.senderProfileImg, radius: 16),  // ← CircleAvatar 대체
             const SizedBox(width: 8),
           ],
           Flexible(
@@ -730,7 +706,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 2, left: 4),
                     child: Text(message.senderNickname,
-                        style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyLarge?.color)),
+                        style: AppTextStyles.caption),
                   ),
                 if (message.replyTo != null)
                   GestureDetector(
@@ -742,10 +718,10 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.6),
                       decoration: BoxDecoration(
-                        color: theme.cardColor,
+                        color: cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
                         border: Border(
-                            left: BorderSide(color: theme.primaryColor, width: 3)),
+                            left: BorderSide(color: cs.primary, width: 3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -753,7 +729,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                         children: [
                           Text(message.replyTo!.senderNickname,
                               style: AppTextStyles.caption.copyWith(
-                                color: theme.primaryColor,
+                                color: cs.primary,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 11,
                               )),
@@ -761,7 +737,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: AppTextStyles.caption
-                                  .copyWith(fontSize: 11, color: theme.textTheme.bodyMedium?.color)),
+                                  .copyWith(fontSize: 11)),
                         ],
                       ),
                     ),
@@ -773,7 +749,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     if (isMine && widget.unreadCount > 0) ...[
                       Text('${widget.unreadCount}',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade600)),
+                              color: Colors.amber.shade700)),
                       const SizedBox(width: 4),
                     ],
                     Flexible(
@@ -784,15 +760,13 @@ class _MessageBubbleState extends State<_MessageBubble> {
                               maxWidth: MediaQuery.of(context).size.width * 0.65),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isMine ? theme.primaryColor : theme.cardColor,
+                            color: isMine ? cs.primary : cs.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(18),
                           ),
                           child: Text(
                             message.content,
                             style: AppTextStyles.body.copyWith(
-                              color: isMine
-                                  ? (theme.brightness == Brightness.dark ? Colors.black : Colors.white)
-                                  : theme.textTheme.bodyLarge?.color,
+                              color: isMine ? cs.onPrimary : cs.onSurface,
                             ),
                           ),
                         ),
@@ -802,7 +776,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       const SizedBox(width: 4),
                       Text('${widget.unreadCount}',
                           style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade600)),
+                              color: Colors.amber.shade700)),
                     ],
                   ],
                 ),   // ← 이 콤마 꼭! 바로 밑 if(reactions)랑 이어지는 거라 없으면 에러
@@ -822,15 +796,15 @@ class _MessageBubbleState extends State<_MessageBubble> {
                                 horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: reacted
-                                  ? theme.primaryColor.withOpacity(0.15)
-                                  : theme.cardColor,
+                                  ? cs.primary.withOpacity(0.15)
+                                  : cs.surfaceContainerHighest,
                               borderRadius: BorderRadius.circular(12),
                               border: reacted
-                                  ? Border.all(color: theme.primaryColor, width: 1)
-                                  : Border.all(color: theme.dividerColor, width: 0.5),
+                                  ? Border.all(color: cs.primary, width: 1)
+                                  : null,
                             ),
                             child: Text('${r.reaction} ${r.count}',
-                                style: TextStyle(fontSize: 12, color: theme.textTheme.bodyLarge?.color)),
+                                style: const TextStyle(fontSize: 12)),
                           ),
                         );
                       }).toList(),

@@ -19,21 +19,19 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    final theme = Theme.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('로그아웃', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-        content: Text('정말 로그아웃하시겠어요?', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: const Text('로그아웃'),
+        content: const Text('정말 로그아웃하시겠어요?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
+            child: const Text('취소'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('로그아웃', style: TextStyle(color: Colors.redAccent)),
+            child: Text('로그아웃', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -41,15 +39,18 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirmed != true) return;
 
+    // 소켓 끊고 토큰/온보딩 플래그 전부 삭제
     SocketClient.disconnect();
     await SecureStorage.clearAll();
 
+    // 강제 초기화 추가 ✅
     ref.invalidate(myProfileProvider);
     ref.invalidate(myGroupsProvider);
     ref.invalidate(footprintsProvider);
 
     if (!context.mounted) return;
 
+    // 로그인 화면으로 완전히 초기화 (invalidate 대신 화면 전환으로 처리)
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
@@ -57,21 +58,16 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
-    final theme = Theme.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: theme.cardColor,
-        title: Text('회원 탈퇴', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
-        content: Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제되고 되돌릴 수 없어요.', style: TextStyle(color: theme.textTheme.bodyLarge?.color)),
+        title: const Text('회원 탈퇴'),
+        content: const Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제되고 되돌릴 수 없어요.'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('취소', style: TextStyle(color: theme.textTheme.bodyMedium?.color))
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('탈퇴', style: TextStyle(color: Colors.redAccent)),
+            child: Text('탈퇴', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -80,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
     try {
       await ProfileRepository().deleteAccount();
       SocketClient.disconnect();
-      await SecureStorage.clearAll();
+      await SecureStorage.clearAll();          // ← clear 아니라 clearAll
       ref.invalidate(myProfileProvider);
       ref.invalidate(myGroupsProvider);
       ref.invalidate(footprintsProvider);
@@ -92,14 +88,13 @@ class ProfileScreen extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('탈퇴 실패: $e'), backgroundColor: Colors.redAccent));
+          SnackBar(content: Text('탈퇴 실패: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -108,32 +103,28 @@ class ProfileScreen extends ConsumerWidget {
       body: profileAsync.when(
         data: (profile) => ListView(
           children: [
-            _buildProfileHeader(context, profile, theme),
+            _buildProfileHeader(context, profile),
             const SizedBox(height: 12),
-            Divider(height: 1, color: theme.dividerColor),
+            const Divider(height: 1),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.pencil,
               label: '내 정보 수정',
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const EditProfileScreen())),
             ),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.heart,
               label: '관심사 재설정',
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const SurveyQuestionsScreen(isEdit: true))),
             ),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.bell,
               label: '알림 설정',
               onTap: () {},
             ),
             _MenuTile(
-              theme: theme,
-              icon: Icons.block_flipped,
+              icon: Icons.block_flipped,          // (네 현재 아이콘 그대로)
               label: '차단 관리',
               onTap: () => Navigator.push(
                 context,
@@ -141,21 +132,18 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.question_circle,
               label: '이용 가이드',
               onTap: () {},
             ),
-            Divider(height: 1, color: theme.dividerColor),
+            const Divider(height: 1),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.square_arrow_right,
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
             ),
             _MenuTile(
-              theme: theme,
               icon: CupertinoIcons.delete,
               label: '회원 탈퇴',
               isDestructive: true,
@@ -168,14 +156,14 @@ class ProfileScreen extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Text('프로필을 불러오지 못했어요: $e',
-                style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
+                style: AppTextStyles.caption),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, UserProfile profile, ThemeData theme) {
+  Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Row(
@@ -186,18 +174,18 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(profile.nickname, style: AppTextStyles.headline2.copyWith(color: theme.textTheme.bodyLarge?.color)),
+                Text(profile.nickname, style: AppTextStyles.headline2),
                 if (profile.typeLabel != null) ...[
                   const SizedBox(height: 4),
                   Text(profile.typeLabel!,
                       style: AppTextStyles.body.copyWith(
-                        color: theme.primaryColor,
+                        color: context.cs.primary,
                         fontWeight: FontWeight.w600,
                       )),
                 ],
                 if (profile.mbti != null) ...[
                   const SizedBox(height: 2),
-                  Text(profile.mbti!, style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
+                  Text(profile.mbti!, style: AppTextStyles.caption),
                 ],
               ],
             ),
@@ -209,14 +197,12 @@ class ProfileScreen extends ConsumerWidget {
 }
 
 class _MenuTile extends StatelessWidget {
-  final ThemeData theme;
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final bool isDestructive;
 
   const _MenuTile({
-    required this.theme,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -225,14 +211,13 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? Colors.redAccent : theme.textTheme.bodyLarge?.color;
+    final color = isDestructive ? context.cs.error : context.cs.onSurface;
     return ListTile(
-      tileColor: theme.scaffoldBackgroundColor, // 배경 칙칙함 방지
       leading: Icon(icon, color: color),
       title: Text(label, style: AppTextStyles.body.copyWith(color: color)),
       trailing: isDestructive
           ? null
-          : Icon(CupertinoIcons.chevron_right, color: theme.textTheme.bodyMedium?.color),
+          : Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
       onTap: onTap,
     );
   }
