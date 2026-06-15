@@ -83,8 +83,15 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                     controller: _controller,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.darkSurfaceVariant
+                          : context.cs.surfaceContainerHighest,
                       hintText: '예) 심야의_코더',
-                      prefixIcon: Icon(Icons.alternate_email, color: context.cs.primary.withOpacity(0.5)),
+                      prefixIcon: Icon(
+                        Icons.alternate_email,
+                        color: context.cs.primary.withOpacity(0.9),
+                      ),
                     ),
                     maxLength: 20,
                   ),
@@ -123,9 +130,9 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                               ),
                               boxShadow: selected ? [
                                 BoxShadow(
-                                  color: context.cs.secondary.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
+                                  color: context.cs.secondary.withOpacity(0.18),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
                                 )
                               ] : null,
                             ),

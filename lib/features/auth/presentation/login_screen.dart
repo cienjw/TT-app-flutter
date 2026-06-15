@@ -79,9 +79,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: context.cs.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      color: context.cs.primary.withOpacity(0.15),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -102,7 +102,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 '새로운 만남, 부담 없이',
                 style: AppTextStyles.title.copyWith(
-                  color: context.cs.onSurface.withOpacity(0.7),
+                  color: context.cs.onSurface.withOpacity(0.6),
                 ),
               ),
               const SizedBox(height: 24),

@@ -101,8 +101,12 @@ class _TermsItem extends StatelessWidget {
               : context.cs.surfaceContainerHighest,     // 연한 회색 배경 (테마 대응)
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: value ? context.cs.primary : context.cs.onSurfaceVariant,
-            width: 1.5,
+            color: value
+                ? (Theme.of(context).brightness == Brightness.dark
+                ? AppColors.termsSelectedDark
+                : context.cs.primary)
+                : context.cs.onSurfaceVariant.withOpacity(0.4),
+            width: 1.2,
           ),
         ),
         child: Row(
