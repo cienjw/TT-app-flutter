@@ -53,6 +53,11 @@ class BlockedUsersScreen extends ConsumerWidget {
                   style: AppTextStyles.body
                       .copyWith(color: context.cs.onSurface)),
               trailing: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
                 onPressed: () => _unblock(context, ref, m),
                 child: const Text('차단 해제'),
               ),

@@ -16,10 +16,11 @@ class GroupSummary {
   });
 
   factory GroupSummary.fromJson(Map<String, dynamic> json) => GroupSummary(
-    id: json['id'] as int,
+    // 👇 id와 memberCount를 안전하게 파싱하도록 수정
+    id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
     name: json['name'] as String? ?? '모임',
     status: json['status'] as String? ?? 'active',
-    memberCount: json['member_count'] as int? ?? 0,
+    memberCount: json['member_count'] is int ? json['member_count'] : int.tryParse(json['member_count'].toString()) ?? 0,
     lastMessage: json['last_message'] as String?,
   );
 }
@@ -90,9 +91,11 @@ class GroupMember {
   final int id;
   final String nickname;
   final String? profileImg;
+
   GroupMember({required this.id, required this.nickname, this.profileImg});
+
   factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
-    id: j['id'] as int,
+    id: j['id'] is int ? j['id'] : int.tryParse(j['id'].toString()) ?? 0,
     nickname: j['nickname'] as String? ?? '',
     profileImg: j['profile_img'] as String?,
   );
