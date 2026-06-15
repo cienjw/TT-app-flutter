@@ -68,7 +68,7 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
+        SnackBar(content: Text('오류: $e'), backgroundColor: AppColors.error),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -78,25 +78,37 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
-              Text('관심사를\n선택해주세요', style: AppTextStyles.headline1),
-              const SizedBox(height: 8),
-              Text('3개 이상 5개 이하로 골라주세요 (${_selected.length}/5)',
-                  style: AppTextStyles.caption),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+              const Text('관심사를\n선택해주세요', style: AppTextStyles.headline2),
+              const SizedBox(height: 12),
+              Text(
+                '3개 이상 5개 이하로 골라주세요 (${_selected.length}/5)',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 40),
 
               Expanded(child: _buildBody()),
 
+              const SizedBox(height: 20),
               AppButton(
                 label: _selected.length < 3
                     ? '${3 - _selected.length}개 더 선택해주세요'
-                    : '다음',
+                    : '다음으로',
                 isLoading: _isSubmitting,
                 onPressed: _selected.length >= 3 ? _submit : null,
               ),
@@ -110,15 +122,25 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
     }
     if (_error != null) {
-      return Center(child: Text(_error!, style: AppTextStyles.caption));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded, color: AppColors.error.withOpacity(0.5), size: 48),
+            const SizedBox(height: 16),
+            Text(_error!, style: AppTextStyles.caption, textAlign: TextAlign.center),
+          ],
+        ),
+      );
     }
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       child: Wrap(
-        spacing: 10,
-        runSpacing: 12,
+        spacing: 12,
+        runSpacing: 14,
         children: _interests.map((interest) {
           final id = interest['id'] as int;
           final name = interest['name'] as String;
@@ -126,22 +148,29 @@ class _InterestScreenState extends ConsumerState<InterestScreen> {
           return GestureDetector(
             onTap: () => _toggle(id),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: selected
-                    ? context.cs.primary
-                    : context.cs.surfaceContainerHighest,
+                color: selected ? AppColors.primaryPink : AppColors.lightGrey,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: selected ? context.cs.primary : Colors.transparent,
+                  color: selected ? AppColors.primaryPink : Colors.transparent,
+                  width: 2,
                 ),
+                boxShadow: selected ? [
+                  BoxShadow(
+                    color: AppColors.primaryPink.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )
+                ] : [],
               ),
               child: Text(
                 name,
-                style: AppTextStyles.body.copyWith(
-                  color: selected ? context.cs.onPrimary : context.cs.onSurface,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                style: TextStyle(
+                  color: selected ? Colors.white : AppColors.textPrimary,
+                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 15,
                 ),
               ),
             ),

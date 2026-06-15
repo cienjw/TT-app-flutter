@@ -1,23 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'core/theme/app_theme.dart';
 import 'core/storage/secure_storage.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/main/presentation/main_screen.dart';
+import 'core/theme/app_colors.dart';
 
 class MeetoryApp extends StatelessWidget {
   const MeetoryApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 상태바 색상 설정
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ));
+
     return MaterialApp(
       title: 'Meetory',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // ← 폰 설정 따라 자동 전환
+      // Meetory의 브랜드 컬러를 강조하기 위해 라이트 모드를 기본으로 사용합니다.
+      themeMode: ThemeMode.light,
       scrollBehavior: const ScrollBehavior().copyWith(
         overscroll: false,
-        physics: const ClampingScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
       ),
       home: const _StartRouter(),
     );
@@ -33,9 +43,9 @@ class _StartRouter extends StatelessWidget {
       future: _checkAuth(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          // 스플래시 대신 흰 화면 (나중에 스플래시 추가 가능)
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: Colors.white,
+            body: Center(child: CircularProgressIndicator(color: AppColors.primaryPink)),
           );
         }
         return switch (snapshot.data!) {
@@ -50,9 +60,8 @@ class _StartRouter extends StatelessWidget {
     final token = await SecureStorage.getAccessToken();
     if (token == null) return _AuthState.loggedOut;
 
-    // 온보딩 완료 여부 확인
     final done = await SecureStorage.isOnboardingComplete();
-    if (!done) return _AuthState.loggedOut; // 온보딩 미완료면 로그인부터 다시
+    if (!done) return _AuthState.loggedOut;
     return _AuthState.loggedIn;
   }
 }
