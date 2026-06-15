@@ -11,16 +11,21 @@ class NicknameScreen extends ConsumerStatefulWidget {
   const NicknameScreen({super.key});
 
   @override
-  ConsumerState<NicknameScreen> createState() => _NicknameScreenState();
+  ConsumerState<NicknameScreen> createState() =>
+      _NicknameScreenState();
 }
 
-class _NicknameScreenState extends ConsumerState<NicknameScreen> {
+class _NicknameScreenState
+    extends ConsumerState<NicknameScreen> {
   final _controller = TextEditingController();
+
   int? _selectedAvatar;
+
   bool _isLoading = false;
 
   bool get _canProceed =>
-      _controller.text.trim().isNotEmpty && _selectedAvatar != null;
+      _controller.text.trim().isNotEmpty &&
+          _selectedAvatar != null;
 
   @override
   void dispose() {
@@ -30,120 +35,278 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
 
   Future<void> _next() async {
     if (!_canProceed) return;
+
     setState(() => _isLoading = true);
+
     try {
-      await ApiClient.dio.put('/api/users/me', data: {
-        'nickname': _controller.text.trim(),
-        'profile_img': 'avatar_${_selectedAvatar! + 1}',
-      });
+      await ApiClient.dio.put(
+        '/api/users/me',
+        data: {
+          'nickname': _controller.text.trim(),
+          'profile_img':
+          'avatar_${_selectedAvatar! + 1}',
+        },
+      );
+
       if (!mounted) return;
+
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const SurveyIntroScreen()),
+        MaterialPageRoute(
+          builder: (_) =>
+          const SurveyIntroScreen(),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text('오류: $e'),
+          backgroundColor: context.cs.error,
+        ),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark =
+        Theme.of(context).brightness ==
+            Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('프로필 설정', style: AppTextStyles.title),
+        title: Text(
+          '프로필 설정',
+          style: AppTextStyles.title,
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 20,
+          ),
+          onPressed: () =>
+              Navigator.pop(context),
         ),
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 28,
+          ),
+
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.vertical -
+              minHeight:
+              MediaQuery.of(context)
+                  .size
+                  .height -
+                  MediaQuery.of(context)
+                      .padding
+                      .vertical -
                   kToolbarHeight,
             ),
+
             child: IntrinsicHeight(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                CrossAxisAlignment.start,
+
                 children: [
                   const SizedBox(height: 40),
-                  Text('어떻게\n불러드릴까요?', style: AppTextStyles.headline1.copyWith(
-                    color: context.cs.primary,
-                  )),
+
+                  Text(
+                    '어떻게\n불러드릴까요?',
+                    style: AppTextStyles
+                        .headline1
+                        .copyWith(
+                      color: isDark
+                          ? Colors.white
+                          : context.cs.primary,
+                    ),
+                  ),
+
                   const SizedBox(height: 32),
+
                   TextField(
                     controller: _controller,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: '예) 심야의_코더',
-                      prefixIcon: Icon(Icons.alternate_email, color: context.cs.primary.withOpacity(0.5)),
+
+                    onChanged: (_) =>
+                        setState(() {}),
+
+                    decoration:
+                    InputDecoration(
+                      hintText:
+                      '예) 심야의_코더',
+
+                      prefixIcon: Icon(
+                        Icons.alternate_email,
+                        color:
+                        context.cs.primary,
+                      ),
                     ),
+
                     maxLength: 20,
                   ),
+
                   Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    padding:
+                    const EdgeInsets.only(
+                      top: 8,
+                      left: 4,
+                    ),
+
                     child: Text(
-                      '나를 잘 표현하는 별명을 추천해요. 안전한 만남을 위해 본명이나 연락처는 피해주세요.',
-                      style: AppTextStyles.caption.copyWith(
+                      '나를 잘 표현하는 별명을 추천해요.\n'
+                          '본명이나 연락처는 사용하지 않는 것을 권장해요.',
+
+                      style: AppTextStyles
+                          .caption
+                          .copyWith(
                         height: 1.5,
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 48),
-                  Text('프로필 사진 선택', style: AppTextStyles.title.copyWith(
-                    color: context.cs.secondary,
-                  )),
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      alignment: WrapAlignment.center,
-                      children: List.generate(ProfileAvatar.presets.length, (i) {
-                        final selected = _selectedAvatar == i;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedAvatar = i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected ? context.cs.secondary : Colors.transparent,
-                                width: 3,
-                              ),
-                              boxShadow: selected ? [
-                                BoxShadow(
-                                  color: context.cs.secondary.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                )
-                              ] : null,
-                            ),
-                            child: ProfileAvatar(
-                              imageId: 'avatar_${i + 1}',
-                              radius: 34,
-                            ),
-                          ),
-                        );
-                      }),
+
+                  Text(
+                    '프로필 사진 선택',
+                    style: AppTextStyles
+                        .title
+                        .copyWith(
+                      color:
+                      context.cs.onSurface,
                     ),
                   ),
+
+                  const SizedBox(height: 24),
+
+                  GridView.builder(
+                    shrinkWrap: true,
+
+                    physics:
+                    const NeverScrollableScrollPhysics(),
+
+                    itemCount:
+                    ProfileAvatar
+                        .presets.length,
+
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+
+                      crossAxisSpacing: 16,
+
+                      mainAxisSpacing: 16,
+
+                      childAspectRatio: 1,
+                    ),
+
+                    itemBuilder: (_, i) {
+                      final selected =
+                          _selectedAvatar ==
+                              i;
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedAvatar =
+                                i;
+                          });
+                        },
+
+                        child:
+                        AnimatedContainer(
+                          duration:
+                          const Duration(
+                            milliseconds:
+                            180,
+                          ),
+
+                          decoration:
+                          BoxDecoration(
+                            shape:
+                            BoxShape.circle,
+
+                            color: selected
+                                ? AppColors
+                                .meetoryPink
+                                .withOpacity(
+                                0.12)
+                                : Colors
+                                .transparent,
+
+                            border:
+                            Border.all(
+                              color: selected
+                                  ? AppColors
+                                  .meetoryPink
+                                  : Colors
+                                  .transparent,
+
+                              width: 2,
+                            ),
+
+                            boxShadow:
+                            selected
+                                ? [
+                              BoxShadow(
+                                color: AppColors
+                                    .meetoryPink
+                                    .withOpacity(
+                                    0.18),
+
+                                blurRadius:
+                                12,
+
+                                offset:
+                                const Offset(
+                                  0,
+                                  4,
+                                ),
+                              ),
+                            ]
+                                : null,
+                          ),
+
+                          child: Center(
+                            child:
+                            ProfileAvatar(
+                              imageId:
+                              'avatar_${i + 1}',
+
+                              radius: 32,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
                   const Spacer(),
+
                   const SizedBox(height: 40),
+
                   AppButton(
                     label: '시작하기',
-                    isLoading: _isLoading,
-                    onPressed: _canProceed ? _next : null,
+
+                    isLoading:
+                    _isLoading,
+
+                    onPressed:
+                    _canProceed
+                        ? _next
+                        : null,
                   ),
+
                   const SizedBox(height: 32),
                 ],
               ),
