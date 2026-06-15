@@ -20,18 +20,21 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  String? _loading; // 'kakao' | 'google' | null
+  String? _loading;
 
   Future<void> _handleLogin(
-      String provider, Future<bool> Function() loginFn) async {
+      String provider,
+      Future<bool> Function() loginFn,
+      ) async {
     setState(() => _loading = provider);
+
     try {
       final isNewUser = await loginFn();
+
       if (!mounted) return;
 
-      // 이전 계정의 소켓 연결 강제 종료 (새 토큰으로 재연결되도록)
       SocketClient.disconnect();
-      // 이전 계정의 캐시 무효화
+
       ref.invalidate(myProfileProvider);
       ref.invalidate(myGroupsProvider);
       ref.invalidate(footprintsProvider);
@@ -39,16 +42,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => isNewUser ? const TermsScreen() : MainScreen(),
+          builder: (_) =>
+          isNewUser ? const TermsScreen() : MainScreen(),
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = null); // 실패 시 로딩 해제
+
+      setState(() => _loading = null);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('로그인 실패: $e'),
-            backgroundColor: context.cs.error),
+          content: Text('로그인 실패: $e'),
+          backgroundColor: context.cs.error,
+        ),
       );
     }
   }
@@ -57,64 +64,90 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final busy = _loading != null;
 
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28.0),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
 
-              // Meetory Logo Icon
+              /// 로고
               Container(
-                width: 80, height: 80,
+                width: 88,
+                height: 88,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
                       AppColors.meetoryPink,
                       AppColors.meetorySkyBlue,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: context.cs.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
+                      color: isDark
+                          ? AppColors.skyBlueLight
+                          .withOpacity(0.18)
+                          : context.cs.primary
+                          .withOpacity(0.28),
+                      blurRadius: 28,
+                      offset: const Offset(0, 12),
                     ),
                   ],
                 ),
-                child: Icon(CupertinoIcons.person_2_fill,
-                    color: Colors.white, size: 40),
+                child: const Icon(
+                  CupertinoIcons.person_2_fill,
+                  color: Colors.white,
+                  size: 42,
+                ),
               ),
+
               const SizedBox(height: 40),
 
+              /// 앱 이름
               Text(
                 'Meetory',
                 style: AppTextStyles.headline1.copyWith(
-                  color: AppColors.meetoryNavy,
-                  fontSize: 36,
+                  fontSize: 38,
                   fontWeight: FontWeight.w900,
+                  color: isDark
+                      ? Colors.white
+                      : AppColors.meetoryNavy,
                 ),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 14),
+
+              /// 서브 타이틀
               Text(
                 '새로운 만남, 부담 없이',
                 style: AppTextStyles.title.copyWith(
-                  color: context.cs.onSurface.withOpacity(0.7),
+                  color: context.cs.onSurface,
                 ),
               ),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 28),
+
+              /// 설명
               Text(
                 'AI가 나와 잘 맞는 소규모 그룹을\n자동으로 연결해드려요.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(
-                    color: context.cs.onSurfaceVariant, height: 1.6),
+                  color: context.cs.onSurfaceVariant,
+                  height: 1.7,
+                ),
               ),
 
               const Spacer(flex: 3),
 
+              /// 카카오 로그인
               AppButton(
                 label: '카카오로 시작하기',
                 variant: AppButtonVariant.kakao,
@@ -122,9 +155,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: busy
                     ? null
                     : () => _handleLogin(
-                    'kakao', ref.read(authProvider.notifier).loginWithKakao),
+                  'kakao',
+                  ref
+                      .read(authProvider.notifier)
+                      .loginWithKakao,
+                ),
               ),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 14),
+
+              /// 구글 로그인
               AppButton(
                 label: 'Google로 시작하기',
                 variant: AppButtonVariant.google,
@@ -132,20 +172,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: busy
                     ? null
                     : () => _handleLogin(
-                    'google', ref.read(authProvider.notifier).loginWithGoogle),
+                  'google',
+                  ref
+                      .read(authProvider.notifier)
+                      .loginWithGoogle,
+                ),
               ),
 
               const SizedBox(height: 32),
-              Center(
+
+              /// 약관 안내
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.darkSurfaceVariant
+                      .withOpacity(0.35)
+                      : AppColors.lightSurfaceVariant,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Text(
                   '로그인 시 서비스 이용약관 및\n개인정보처리방침에 동의하는 것으로 간주됩니다.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.caption.copyWith(
-                    color: context.cs.onSurface.withOpacity(0.5),
+                    color: context.cs.onSurfaceVariant,
+                    height: 1.5,
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+
+              const SizedBox(height: 28),
             ],
           ),
         ),
