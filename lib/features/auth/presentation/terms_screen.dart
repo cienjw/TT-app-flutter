@@ -1,133 +1,132 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/app_button.dart';
-import 'nickname_screen.dart';
 
 class TermsScreen extends StatefulWidget {
-  const TermsScreen({super.key});
+  const TermsScreen({Key? key}) : super(key: key);
 
   @override
   State<TermsScreen> createState() => _TermsScreenState();
 }
 
 class _TermsScreenState extends State<TermsScreen> {
-  bool _terms = false;
-  bool _privacy = false;
-  bool _marketing = false;
-
-  bool get _canProceed => _terms && _privacy;
+  bool _isServiceAgreed = false;
+  bool _isPrivacyAgreed = false;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // 선택 여부에 따른 유연한 연한 컬러 매핑
+    final activeBackgroundColor = isDarkMode ? AppColors.termsSelectedDark : AppColors.termsSelectedLight;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('약관 동의', style: AppTextStyles.title),
-        automaticallyImplyLeading: false,
+        title: const Text('약관 동의'),
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              Text('환영합니다!\n서비스 이용을 위해\n약관에 동의해주세요',
-                  style: AppTextStyles.headline1.copyWith(
-                    color: context.cs.primary,
-                    height: 1.3,
-                  )
+              Text(
+                '이용 약관에\n동의가 필요합니다.',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 32),
 
-              _TermsItem(
-                label: '서비스 이용약관 동의 (필수)',
-                value: _terms,
-                onChanged: (v) => setState(() => _terms = v),
+              // 1. 서비스 이용약관
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isServiceAgreed = !_isServiceAgreed;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: _isServiceAgreed ? activeBackgroundColor : theme.cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isServiceAgreed ? theme.primaryColor.withOpacity(0.3) : Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isServiceAgreed ? Icons.check_circle : Icons.check_circle_outline,
+                        color: _isServiceAgreed ? theme.primaryColor : theme.disabledColor,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '[필수] 서비스 이용약관 동의',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: _isServiceAgreed ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
-              _TermsItem(
-                label: '개인정보 처리방침 동의 (필수)',
-                value: _privacy,
-                onChanged: (v) => setState(() => _privacy = v),
-              ),
-              const SizedBox(height: 16),
-              _TermsItem(
-                label: '마케팅 정보 수신 동의 (선택)',
-                value: _marketing,
-                onChanged: (v) => setState(() => _marketing = v),
+
+              // 2. 개인정보 처리방침
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isPrivacyAgreed = !_isPrivacyAgreed;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: _isPrivacyAgreed ? activeBackgroundColor : theme.cardColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: _isPrivacyAgreed ? theme.primaryColor.withOpacity(0.3) : Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _isPrivacyAgreed ? Icons.check_circle : Icons.check_circle_outline,
+                        color: _isPrivacyAgreed ? theme.primaryColor : theme.disabledColor,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '[필수] 개인정보 수집 및 이용 동의',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: _isPrivacyAgreed ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
               const Spacer(),
-              AppButton(
-                label: '동의하고 계속하기',
-                onPressed: _canProceed
-                    ? () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NicknameScreen()),
-                )
-                    : null,
+              ElevatedButton(
+                onPressed: (_isServiceAgreed && _isPrivacyAgreed) ? () {} : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  disabledBackgroundColor: theme.disabledColor.withOpacity(0.12),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('다음', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 32),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TermsItem extends StatelessWidget {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _TermsItem({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => onChanged(!value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: value
-              ? context.cs.primary.withOpacity(0.12)   // 연한 스카이블루 배경
-              : context.cs.surfaceContainerHighest,     // 연한 회색 배경 (테마 대응)
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: value ? context.cs.primary : context.cs.onSurfaceVariant,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              value ? CupertinoIcons.check_mark_circled_solid : CupertinoIcons.circle,
-              color: value ? context.cs.primary.withOpacity(0.4) : Colors.transparent,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: AppTextStyles.body.copyWith(
-                  fontWeight: value ? FontWeight.w600 : FontWeight.normal,
-                  color: value ? context.cs.primary : context.cs.onSurface,
-                ),
-              ),
-            ),
-            Icon(
-              CupertinoIcons.chevron_right,
-              size: 16,
-              color: context.cs.onSurfaceVariant.withOpacity(0.5),
-            ),
-          ],
         ),
       ),
     );

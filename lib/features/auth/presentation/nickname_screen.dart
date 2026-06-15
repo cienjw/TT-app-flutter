@@ -1,153 +1,107 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/api_client.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/profile_avatar.dart';
-import 'survey_intro_screen.dart';
 
-class NicknameScreen extends ConsumerStatefulWidget {
-  const NicknameScreen({super.key});
+class NicknameScreen extends StatefulWidget {
+  const NicknameScreen({Key? key}) : super(key: key);
 
   @override
-  ConsumerState<NicknameScreen> createState() => _NicknameScreenState();
+  State<NicknameScreen> createState() => _NicknameScreenState();
 }
 
-class _NicknameScreenState extends ConsumerState<NicknameScreen> {
-  final _controller = TextEditingController();
-  int? _selectedAvatar;
-  bool _isLoading = false;
-
-  bool get _canProceed =>
-      _controller.text.trim().isNotEmpty && _selectedAvatar != null;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _next() async {
-    if (!_canProceed) return;
-    setState(() => _isLoading = true);
-    try {
-      await ApiClient.dio.put('/api/users/me', data: {
-        'nickname': _controller.text.trim(),
-        'profile_img': 'avatar_${_selectedAvatar! + 1}',
-      });
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const SurveyIntroScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+class _NicknameScreenState extends State<NicknameScreen> {
+  int _selectedImageIndex = 0; // 초기 선택 예시
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('프로필 설정', style: AppTextStyles.title),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('프로필 설정'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.vertical -
-                  kToolbarHeight,
-            ),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  Text('어떻게\n불러드릴까요?', style: AppTextStyles.headline1.copyWith(
-                    color: context.cs.primary,
-                  )),
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: _controller,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: '예) 심야의_코더',
-                      prefixIcon: Icon(Icons.alternate_email, color: context.cs.primary.withOpacity(0.5)),
-                    ),
-                    maxLength: 20,
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '사용하실 닉네임과\n프로필을 선택해 주세요.',
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+                decoration: InputDecoration(
+                  hintText: '닉네임을 입력하세요',
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Text(
-                      '나를 잘 표현하는 별명을 추천해요. 안전한 만남을 위해 본명이나 연락처는 피해주세요.',
-                      style: AppTextStyles.caption.copyWith(
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  Text('프로필 사진 선택', style: AppTextStyles.title.copyWith(
-                    color: context.cs.secondary,
-                  )),
-                  const SizedBox(height: 24),
-              GridView.count(
-                crossAxisCount: 4,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 40),
+              Text(
+                '프로필 이미지 선택',
+                style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+
+              // 💡 4-4 두 줄 배열 구조 변환 (내부 불필요 스크롤 완전 차단)
+              GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(ProfileAvatar.presets.length, (i) {
-                        final selected = _selectedAvatar == i;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedAvatar = i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected ? context.cs.secondary : Colors.transparent,
-                                width: 3,
-                              ),
-                              boxShadow: selected ? [
-                                BoxShadow(
-                                  color: context.cs.secondary.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                )
-                              ] : null,
-                            ),
-                            child: ProfileAvatar(
-                              imageId: 'avatar_${i + 1}',
-                              radius: 34,
-                            ),
-                          ),
-                        );
-                      }),
+                itemCount: 8,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,          // 한 줄에 4개 배치
+                  crossAxisSpacing: 16.0,     // 가로 아이템 간격
+                  mainAxisSpacing: 16.0,      // 세로 줄 간격
+                  childAspectRatio: 1.0,      // 정사각형 비율 보장
+                ),
+                itemBuilder: (context, index) {
+                  final isSelected = _selectedImageIndex == index;
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedImageIndex = index;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected ? theme.primaryColor : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: theme.cardColor,
+                        child: Icon(
+                            Icons.person,
+                            color: isSelected ? theme.primaryColor : theme.disabledColor
+                        ), // 이 자리에 Image.asset 또는 네트워크 이미지를 매핑하여 채워주시면 됩니다.
+                      ),
                     ),
-                  const Spacer(),
-                  const SizedBox(height: 40),
-                  AppButton(
-                    label: '시작하기',
-                    isLoading: _isLoading,
-                    onPressed: _canProceed ? _next : null,
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                  );
+                },
               ),
-            ),
+
+              const SizedBox(height: 48),
+              ElevatedButton(
+                onPressed: () {
+                  // 완료 및 홈 화면 진입 로직
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('완료', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ),
       ),
