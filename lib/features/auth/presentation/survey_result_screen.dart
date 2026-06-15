@@ -9,10 +9,12 @@ import '../../../shared/widgets/app_button.dart';
 import '../../main/presentation/main_screen.dart';
 import '../../chat/domain/chat_provider.dart'; // groupRepoProvider
 import '../data/survey_data.dart';
+import '../../profile/domain/profile_provider.dart';
 
 class SurveyResultScreen extends ConsumerWidget {
   final SurveyResult result;
-  const SurveyResultScreen({super.key, required this.result});
+  final bool isEdit;
+  const SurveyResultScreen({super.key, required this.result, this.isEdit = false});
 
   Future<void> _start(WidgetRef ref, BuildContext context) async {
     try {
@@ -24,11 +26,18 @@ class SurveyResultScreen extends ConsumerWidget {
         'purpose': result.purpose.name,
         'mbti': result.mbti,
       });
-      // 설문 완료 → 홈 진입과 동시에 자동으로 매칭 대기열 등록
-      await ref.read(groupRepoProvider).joinMatching(threshold: 0.3);
-    } catch (_) {
-      // 발표 데모 중엔 실패해도 흐름은 막지 않음
+      if (!isEdit) {
+        await ref.read(groupRepoProvider).joinMatching(threshold: 0.3);
+      }
+    } catch (_) {}
+
+    if (isEdit) {
+      ref.invalidate(myProfileProvider);            // 프로필 갱신
+      if (!context.mounted) return;
+      Navigator.popUntil(context, (route) => route.isFirst);  // 프로필로 복귀
+      return;
     }
+
     await SecureStorage.setOnboardingComplete();
     if (!context.mounted) return;
     Navigator.pushAndRemoveUntil(

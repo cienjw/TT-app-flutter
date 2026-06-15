@@ -6,7 +6,8 @@ import 'survey_result_screen.dart';
 
 class SurveyMbtiScreen extends StatefulWidget {
   final List<SurveyOption> answers;
-  const SurveyMbtiScreen({super.key, required this.answers});
+  final bool isEdit;
+  const SurveyMbtiScreen({super.key, required this.answers, this.isEdit = false});
 
   @override
   State<SurveyMbtiScreen> createState() => _SurveyMbtiScreenState();
@@ -24,7 +25,7 @@ class _SurveyMbtiScreenState extends State<SurveyMbtiScreen> {
     final result = scoreSurvey(widget.answers, mbti: skip ? null : _mbti);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SurveyResultScreen(result: result)),
+      MaterialPageRoute(builder: (_) => SurveyResultScreen(result: result, isEdit: widget.isEdit)),
     );
   }
 

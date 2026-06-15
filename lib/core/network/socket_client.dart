@@ -22,12 +22,16 @@ class SocketClient {
     _socket = io.io(
       _baseUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports(['websocket', 'polling'])
           .disableAutoConnect()
           .enableForceNew()              // ★ 핵심: 패키지 내부 캐시 무시, 항상 새 소켓 생성
           .setAuth({'token': token})
           .build(),
     );
+
+    _socket!.onConnect((_) => print('### 소켓 연결됨'));
+    _socket!.onConnectError((e) => print('### 소켓 연결 에러: $e'));
+    _socket!.onError((e) => print('### 소켓 에러: $e'));
 
     _socket!.connect();
     return _socket!;

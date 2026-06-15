@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
 import 'app_text_styles.dart';
+import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData get lightTheme => _build(
@@ -12,17 +12,14 @@ class AppTheme {
       onSecondary: AppColors.white,
       surface: AppColors.lightSurface,
       onSurface: AppColors.lightTextPrimary,
-      surfaceContainerHighest:
-      AppColors.lightSurfaceVariant,
-      onSurfaceVariant:
-      AppColors.lightTextSecondary,
+      surfaceContainerHighest: AppColors.lightSurfaceVariant,
+      onSurfaceVariant: AppColors.lightTextSecondary,
       error: AppColors.error,
       onError: AppColors.white,
     ),
     scaffoldBg: AppColors.lightBg,
     surface: AppColors.lightSurface,
-    surfaceVariant:
-    AppColors.lightSurfaceVariant,
+    surfaceVariant: AppColors.lightSurfaceVariant,
     onSurface: AppColors.lightTextPrimary,
     hint: AppColors.lightTextHint,
     primary: AppColors.meetorySkyBlue,
@@ -32,31 +29,19 @@ class AppTheme {
     brightness: Brightness.dark,
     scheme: const ColorScheme.dark().copyWith(
       primary: AppColors.skyBlueLight,
-
-      onPrimary: AppColors.meetoryNavy,
-
+      onPrimary: AppColors.black,
       secondary: AppColors.pinkLight,
-
-      onSecondary: AppColors.meetoryNavy,
-
+      onSecondary: AppColors.black,
       surface: AppColors.darkSurface,
-
       onSurface: AppColors.darkTextPrimary,
-
-      surfaceContainerHighest:
-      AppColors.darkSurfaceVariant,
-
-      onSurfaceVariant:
-      AppColors.darkTextSecondary,
-
+      surfaceContainerHighest: AppColors.darkSurfaceVariant,
+      onSurfaceVariant: AppColors.darkTextSecondary,
       error: AppColors.error,
-
-      onError: AppColors.white,
+      onError: AppColors.black,
     ),
     scaffoldBg: AppColors.darkBg,
     surface: AppColors.darkSurface,
-    surfaceVariant:
-    AppColors.darkSurfaceVariant,
+    surfaceVariant: AppColors.darkSurfaceVariant,
     onSurface: AppColors.darkTextPrimary,
     hint: AppColors.darkTextHint,
     primary: AppColors.skyBlueLight,
@@ -74,122 +59,63 @@ class AppTheme {
   }) {
     return ThemeData(
       useMaterial3: true,
-
       brightness: brightness,
-
       colorScheme: scheme,
-
       scaffoldBackgroundColor: scaffoldBg,
-
       splashFactory: NoSplash.splashFactory,
-
       highlightColor: Colors.transparent,
-
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         backgroundColor: Colors.transparent,
         foregroundColor: onSurface,
-        titleTextStyle:
-        AppTextStyles.headline2.copyWith(
-          color: onSurface,
-        ),
+        titleTextStyle: AppTextStyles.headline2.copyWith(color: onSurface),
       ),
-
-      elevatedButtonTheme:
-      ElevatedButtonThemeData(
+      elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 56),
 
           shape: RoundedRectangleBorder(
-            borderRadius:
-            BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: scheme.primary, width: 1.5),
           ),
-
           elevation: 0,
-
           backgroundColor: scheme.primary,
-
           foregroundColor: scheme.onPrimary,
         ),
       ),
-
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize:
-          const Size(double.infinity, 52),
-
+          minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius:
-            BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16),
           ),
-
           backgroundColor: scheme.primary,
-
           foregroundColor: scheme.onPrimary,
         ),
       ),
-
-      outlinedButtonTheme:
-      OutlinedButtonThemeData(
+      outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize:
-          const Size(double.infinity, 52),
-
+          minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(
-            borderRadius:
-            BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16),
           ),
-
-          side: BorderSide(
-            color: scheme.primary,
-            width: 1.5,
-          ),
-
+          side: BorderSide(color: scheme.primary, width: 1.5),
           foregroundColor: scheme.primary,
         ),
       ),
-
-      navigationBarTheme:
-      NavigationBarThemeData(
+      navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-
         indicatorColor: Colors.transparent,
-
-        iconTheme:
-        WidgetStateProperty.resolveWith(
-              (states) {
-            final selected =
-            states.contains(
-                WidgetState.selected);
-
-            return IconThemeData(
-              color: selected
-                  ? primary
-                  : hint,
-            );
-          },
-        ),
-
-        labelTextStyle:
-        WidgetStateProperty.resolveWith(
-              (states) {
-            return TextStyle(
-              color: states.contains(
-                  WidgetState.selected)
-                  ? primary
-                  : hint,
-            );
-          },
-        ),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(color: selected ? primary : hint);
+        }),
       ),
-
       cardTheme: CardThemeData(
         elevation: 0,
-
         color: surface,
-
         shape: RoundedRectangleBorder(
           borderRadius:
           BorderRadius.circular(16),
@@ -201,9 +127,7 @@ class AppTheme {
           ),
         ),
       ),
-
-      inputDecorationTheme:
-      InputDecorationTheme(
+      inputDecorationTheme: InputDecorationTheme(
         filled: true,
 
         fillColor: brightness == Brightness.dark
@@ -211,19 +135,9 @@ class AppTheme {
             : surfaceVariant,
 
         border: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(16),
-
-          borderSide: BorderSide.none,
-        ),
-
+            borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(16),
-
-          borderSide: BorderSide.none,
-        ),
-
+            borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius:
           BorderRadius.circular(16),

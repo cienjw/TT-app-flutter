@@ -12,7 +12,7 @@ class AppColors {
 
   // 밝은 버전
   static const navyLight = Color(0xFF55627E);
-  static const pinkLight = Color(0xFFFFB3A5);
+  static const pinkLight = Color(0xFFFF8DA1);
   static const skyBlueLight = Color(0xFFB8DCE8);
 
   // 기존 호환 이름
@@ -64,12 +64,9 @@ class AppColors {
   static const darkBackground = darkBg;
 
   // Status
-
-  static const error = Color(0xFFE53935);
-
-  static const success = Color(0xFF43A047);
-
-  static const kakaoYellow = Color(0xFFFEE500);
+  static const error           = Color(0xFFE53935);
+  static const success         = Color(0xFF43A047);
+  static const kakaoYellow     = Color(0xFFFEE500);
 }
 
 extension ColorSchemeX on BuildContext {

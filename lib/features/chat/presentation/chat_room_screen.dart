@@ -44,6 +44,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   int? _highlightedId;
   late String _groupName;
   final Set<int> _blockedIds = {};
+  final List<GroupMember> _members = [];
+  final Map<int, int> _lastRead = {};
 
   static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
 
@@ -83,10 +85,20 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       _blockedIds.addAll(blocked.map((b) => b.id));
     } catch (_) {}
 
+    try {
+      final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
+      _members..clear()..addAll(detail.members);
+      for (final m in detail.members) {
+        _lastRead[m.id] = m.lastReadId;
+      }
+    } catch (_) {}
+
     _socket = await SocketClient.connect();
     _socket!.emit('join_room', widget.groupId);
     _socket!.on('new_message', _onNewMessage);
     _socket!.on('reaction_updated', _onReactionUpdated);
+    _socket!.on('read_updated', _onReadUpdated);
+    _markReadLatest();
   }
 
   void _scrollToBottom() {
@@ -135,11 +147,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   void _onNewMessage(dynamic data) {
     final msg = Message.fromJson(Map<String, dynamic>.from(data));
-    if (_blockedIds.contains(msg.senderId)) return; // 차단 → 새 메시지 안 보임
+    if (_blockedIds.contains(msg.senderId)) return;
     setState(() => _messages.add(msg));
     _scrollToBottom();
+    _markReadLatest();
   }
-
   void _onReactionUpdated(dynamic data) {
     final map = Map<String, dynamic>.from(data);
     final messageId = (map['messageId'] as num).toInt();
@@ -186,6 +198,29 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         ),
       ),
     );
+  }
+
+  void _markReadLatest() {
+    if (_messages.isEmpty || _socket == null) return;
+    _socket!.emit('mark_read', {
+      'groupId': widget.groupId,
+      'messageId': _messages.last.id,
+    });
+  }
+
+  void _onReadUpdated(dynamic data) {
+    final map = Map<String, dynamic>.from(data);
+    final uid = (map['userId'] as num).toInt();
+    final lastId = (map['lastReadId'] as num).toInt();
+    setState(() => _lastRead[uid] = lastId);
+  }
+
+  int _unreadCount(Message m) {
+    if (_members.isEmpty) return 0;
+    final readers = _members.where((mem) =>
+    mem.id == m.senderId || (_lastRead[mem.id] ?? 0) >= m.id
+    ).length;
+    return _members.length - readers; // 0이면 안 보임
   }
 
   Future<void> _showMembers() async {
@@ -420,6 +455,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     _socket?.emit('leave_room', widget.groupId);
     _socket?.off('new_message', _onNewMessage);
     _socket?.off('reaction_updated', _onReactionUpdated);
+    _socket?.off('read_updated', _onReadUpdated);
     _textController.dispose();
     _inputFocus.dispose();
     super.dispose();
@@ -469,6 +505,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                   message: msg,
                   isMine: isMine,
                   myUserId: _myUserId,
+                  unreadCount: _unreadCount(msg),
                   highlight: _highlightedId == msg.id,
                   onLongPress: () => _showReactionPicker(msg),
                   onReactionTap: (reaction) =>
@@ -572,6 +609,7 @@ class _MessageBubble extends StatefulWidget {
   final void Function(String reaction) onReactionTap;
   final VoidCallback onReply;
   final VoidCallback? onReplyTap;
+  final int unreadCount;
 
   const _MessageBubble({
     super.key,
@@ -582,6 +620,7 @@ class _MessageBubble extends StatefulWidget {
     required this.onLongPress,
     required this.onReactionTap,
     required this.onReply,
+    required this.unreadCount,
     this.onReplyTap,
   });
 
@@ -703,25 +742,44 @@ class _MessageBubbleState extends State<_MessageBubble> {
                       ),
                     ),
                   ),
-                GestureDetector(
-                  onLongPress: widget.onLongPress,
-                  child: Container(
-                    constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.65),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isMine ? cs.primary : cs.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Text(
-                      message.content,
-                      style: AppTextStyles.body.copyWith(
-                        color: isMine ? cs.onPrimary : cs.onSurface,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (isMine && widget.unreadCount > 0) ...[
+                      Text('${widget.unreadCount}',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade700)),
+                      const SizedBox(width: 4),
+                    ],
+                    Flexible(
+                      child: GestureDetector(
+                        onLongPress: widget.onLongPress,
+                        child: Container(
+                          constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.65),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isMine ? cs.primary : cs.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Text(
+                            message.content,
+                            style: AppTextStyles.body.copyWith(
+                              color: isMine ? cs.onPrimary : cs.onSurface,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                    if (!isMine && widget.unreadCount > 0) ...[
+                      const SizedBox(width: 4),
+                      Text('${widget.unreadCount}',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade700)),
+                    ],
+                  ],
+                ),   // ← 이 콤마 꼭! 바로 밑 if(reactions)랑 이어지는 거라 없으면 에러
                 if (message.reactions.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),

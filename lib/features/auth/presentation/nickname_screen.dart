@@ -11,21 +11,16 @@ class NicknameScreen extends ConsumerStatefulWidget {
   const NicknameScreen({super.key});
 
   @override
-  ConsumerState<NicknameScreen> createState() =>
-      _NicknameScreenState();
+  ConsumerState<NicknameScreen> createState() => _NicknameScreenState();
 }
 
-class _NicknameScreenState
-    extends ConsumerState<NicknameScreen> {
+class _NicknameScreenState extends ConsumerState<NicknameScreen> {
   final _controller = TextEditingController();
-
   int? _selectedAvatar;
-
   bool _isLoading = false;
 
   bool get _canProceed =>
-      _controller.text.trim().isNotEmpty &&
-          _selectedAvatar != null;
+      _controller.text.trim().isNotEmpty && _selectedAvatar != null;
 
   @override
   void dispose() {
@@ -35,90 +30,49 @@ class _NicknameScreenState
 
   Future<void> _next() async {
     if (!_canProceed) return;
-
     setState(() => _isLoading = true);
-
     try {
-      await ApiClient.dio.put(
-        '/api/users/me',
-        data: {
-          'nickname': _controller.text.trim(),
-          'profile_img':
-          'avatar_${_selectedAvatar! + 1}',
-        },
-      );
-
+      await ApiClient.dio.put('/api/users/me', data: {
+        'nickname': _controller.text.trim(),
+        'profile_img': 'avatar_${_selectedAvatar! + 1}',
+      });
       if (!mounted) return;
-
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-          const SurveyIntroScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const SurveyIntroScreen()),
       );
     } catch (e) {
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
-        SnackBar(
-          content: Text('오류: $e'),
-          backgroundColor: context.cs.error,
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '프로필 설정',
-          style: AppTextStyles.title,
-        ),
+        title: Text('프로필 설정', style: AppTextStyles.title),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            size: 20,
-          ),
-          onPressed: () =>
-              Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 28,
-          ),
-
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight:
-              MediaQuery.of(context)
-                  .size
-                  .height -
-                  MediaQuery.of(context)
-                      .padding
-                      .vertical -
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.vertical -
                   kToolbarHeight,
             ),
-
             child: IntrinsicHeight(
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
 
@@ -134,35 +88,17 @@ class _NicknameScreenState
                   ),
 
                   const SizedBox(height: 32),
-
                   TextField(
                     controller: _controller,
-
-                    onChanged: (_) =>
-                        setState(() {}),
-
-                    decoration:
-                    InputDecoration(
-                      hintText:
-                      '예) 심야의_코더',
-
-                      prefixIcon: Icon(
-                        Icons.alternate_email,
-                        color:
-                        context.cs.primary,
-                      ),
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: '예) 심야의_코더',
+                      prefixIcon: Icon(Icons.alternate_email, color: context.cs.primary.withOpacity(0.5)),
                     ),
-
                     maxLength: 20,
                   ),
-
                   Padding(
-                    padding:
-                    const EdgeInsets.only(
-                      top: 8,
-                      left: 4,
-                    ),
-
+                    padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Text(
                       '나를 잘 표현하는 별명을 추천해요.\n'
                           '본명이나 연락처는 사용하지 않는 것을 권장해요.',
@@ -172,19 +108,10 @@ class _NicknameScreenState
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 48),
-
-                  Text(
-                    '프로필 사진 선택',
-                    style: AppTextStyles
-                        .title
-                        .copyWith(
-                      color:
-                      context.cs.onSurface,
-                    ),
-                  ),
-
+                  Text('프로필 사진 선택', style: AppTextStyles.title.copyWith(
+                    color: context.cs.secondary,
+                  )),
                   const SizedBox(height: 24),
 
                   GridView.builder(
@@ -271,40 +198,30 @@ class _NicknameScreenState
                                   4,
                                 ),
                               ),
-                            ]
-                                : null,
-                          ),
-
-                          child: Center(
-                            child:
-                            ProfileAvatar(
-                              imageId:
-                              'avatar_${i + 1}',
-
-                              radius: 32,
+                              boxShadow: selected ? [
+                                BoxShadow(
+                                  color: context.cs.secondary.withOpacity(0.3),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                )
+                              ] : null,
+                            ),
+                            child: ProfileAvatar(
+                              imageId: 'avatar_${i + 1}',
+                              radius: 34,
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      }),
+                    ),
                   ),
-
                   const Spacer(),
-
                   const SizedBox(height: 40),
-
                   AppButton(
                     label: '시작하기',
-
-                    isLoading:
-                    _isLoading,
-
-                    onPressed:
-                    _canProceed
-                        ? _next
-                        : null,
+                    isLoading: _isLoading,
+                    onPressed: _canProceed ? _next : null,
                   ),
-
                   const SizedBox(height: 32),
                 ],
               ),

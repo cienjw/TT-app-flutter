@@ -39,9 +39,14 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final rawInterests = json['interests'] as List?;
+    final ids = <int>[];
     final names = <String>[];
     if (rawInterests != null) {
       for (final item in rawInterests) {
+        if (item is Map && item['id'] != null) {
+          final v = item['id'];
+          ids.add(v is int ? v : int.tryParse('$v') ?? 0);
+        }
         if (item is Map && item['name'] != null) {
           names.add(item['name'] as String);
         }
@@ -75,4 +80,16 @@ class ProfileRepository {
     final res = await ApiClient.dio.get('/api/users/me');
     return UserProfile.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<void> deleteAccount() async {
+    await ApiClient.dio.delete('/api/users/me');
+  }
+
+  Future<void> updateProfile({required String nickname, String? profileImg}) async {
+    await ApiClient.dio.put('/api/users/me', data: {
+      'nickname': nickname,
+      'profile_img': profileImg,
+    });
+  }
 }
+

@@ -12,6 +12,8 @@ import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'blocked_users_screen.dart';
+import 'edit_profile_screen.dart';
+import '../../auth/presentation/survey_questions_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -55,6 +57,41 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('회원 탈퇴'),
+        content: const Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제되고 되돌릴 수 없어요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('탈퇴', style: TextStyle(color: context.cs.error)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ProfileRepository().deleteAccount();
+      SocketClient.disconnect();
+      await SecureStorage.clearAll();          // ← clear 아니라 clearAll
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(myGroupsProvider);
+      ref.invalidate(footprintsProvider);
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('탈퇴 실패: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileAsync = ref.watch(myProfileProvider);
@@ -72,7 +109,14 @@ class ProfileScreen extends ConsumerWidget {
             _MenuTile(
               icon: CupertinoIcons.pencil,
               label: '내 정보 수정',
-              onTap: () {}, // 추후 구현
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+            ),
+            _MenuTile(
+              icon: CupertinoIcons.heart,
+              label: '관심사 재설정',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SurveyQuestionsScreen(isEdit: true))),
             ),
             _MenuTile(
               icon: CupertinoIcons.bell,
@@ -98,6 +142,12 @@ class ProfileScreen extends ConsumerWidget {
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
+            ),
+            _MenuTile(
+              icon: CupertinoIcons.delete,
+              label: '회원 탈퇴',
+              isDestructive: true,
+              onTap: () => _deleteAccount(context, ref),
             ),
           ],
         ),

@@ -91,13 +91,22 @@ class GroupMember {
   final int id;
   final String nickname;
   final String? profileImg;
+  final int lastReadId;
 
-  GroupMember({required this.id, required this.nickname, this.profileImg});
+  GroupMember({
+    required this.id,
+    required this.nickname,
+    this.profileImg,
+    this.lastReadId = 0,
+  });
 
   factory GroupMember.fromJson(Map<String, dynamic> j) => GroupMember(
     id: j['id'] is int ? j['id'] : int.tryParse(j['id'].toString()) ?? 0,
     nickname: j['nickname'] as String? ?? '',
     profileImg: j['profile_img'] as String?,
+    lastReadId: j['lastReadId'] is int
+        ? j['lastReadId']
+        : int.tryParse('${j['lastReadId']}') ?? 0,
   );
 }
 
