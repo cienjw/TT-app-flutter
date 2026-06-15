@@ -79,13 +79,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: isDark
-                          ? AppColors.skyBlueLight
-                          .withOpacity(0.12)
-                          : context.cs.primary
-                          .withOpacity(0.28),
-                      blurRadius: 28,
-                      offset: const Offset(0, 12),
+                      color: context.cs.primary.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -114,9 +110,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 'AI가 나와 잘 맞는 소규모 그룹을\n자동으로 연결해드려요.',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(
-                  color: context.cs.onSurfaceVariant,
-                  height: 1.5,
-                ),
+                    color: context.cs.onSurfaceVariant, height: 1.6),
               ),
 
               const Spacer(flex: 3),
@@ -142,20 +136,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
 
               const SizedBox(height: 32),
-
-              /// 약관 안내
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.darkSurfaceVariant
-                      .withOpacity(0.60)
-                      : AppColors.lightSurfaceVariant,
-                  borderRadius: BorderRadius.circular(14),
-                ),
+              Center(
                 child: Text(
                   '로그인 시 서비스 이용약관 및\n개인정보처리방침에 동의하는 것으로 간주됩니다.',
                   textAlign: TextAlign.center,
