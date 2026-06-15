@@ -74,7 +74,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 52),
+          minimumSize: const Size(double.infinity, 56),
+
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: BorderSide(color: scheme.primary, width: 1.5),
@@ -116,22 +117,51 @@ class AppTheme {
         elevation: 0,
         color: surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: surfaceVariant),
+          borderRadius:
+          BorderRadius.circular(16),
+
+          side: BorderSide(
+            color: brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.05)
+                : surfaceVariant,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceVariant,
+
+        fillColor: brightness == Brightness.dark
+            ? surface
+            : surfaceVariant,
+
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primary, width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        hintStyle: TextStyle(color: hint),
+          borderRadius:
+          BorderRadius.circular(16),
+
+          borderSide: BorderSide(
+            color: primary,
+            width: 1.2,
+          ),
+        ),
+
+        contentPadding:
+        const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+
+        hintStyle: TextStyle(
+          color: hint,
+        ),
+      ),
+
+      dividerTheme: DividerThemeData(
+        color: surfaceVariant,
+        thickness: 1,
       ),
     );
   }
