@@ -102,12 +102,13 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                     color: context.cs.secondary,
                   )),
                   const SizedBox(height: 24),
-                  Center(
-                    child: Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      alignment: WrapAlignment.center,
-                      children: List.generate(ProfileAvatar.presets.length, (i) {
+              GridView.count(
+                crossAxisCount: 4,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: List.generate(ProfileAvatar.presets.length, (i) {
                         final selected = _selectedAvatar == i;
                         return GestureDetector(
                           onTap: () => setState(() => _selectedAvatar = i),
@@ -136,7 +137,6 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                         );
                       }),
                     ),
-                  ),
                   const Spacer(),
                   const SizedBox(height: 40),
                   AppButton(
