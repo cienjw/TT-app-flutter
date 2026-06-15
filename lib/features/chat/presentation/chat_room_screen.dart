@@ -755,7 +755,21 @@ class _MessageBubbleState extends State<_MessageBubble> {
                     Flexible(
                       child: GestureDetector(
                         onLongPress: widget.onLongPress,
-                        child: Container( /* 기존 말풍선 그대로 */ ),
+                        child: Container(
+                          constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.65),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isMine ? cs.primary : cs.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Text(
+                            message.content,
+                            style: AppTextStyles.body.copyWith(
+                              color: isMine ? cs.onPrimary : cs.onSurface,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     if (!isMine && widget.unreadCount > 0) ...[
@@ -765,7 +779,7 @@ class _MessageBubbleState extends State<_MessageBubble> {
                               color: Colors.amber.shade700)),
                     ],
                   ],
-                )
+                ),   // ← 이 콤마 꼭! 바로 밑 if(reactions)랑 이어지는 거라 없으면 에러
                 if (message.reactions.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
