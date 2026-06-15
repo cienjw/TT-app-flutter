@@ -100,8 +100,7 @@ class AppTheme {
       elevatedButtonTheme:
       ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          minimumSize:
-          const Size(double.infinity, 52),
+          minimumSize: const Size(double.infinity, 56),
 
           shape: RoundedRectangleBorder(
             borderRadius:
@@ -196,7 +195,9 @@ class AppTheme {
           BorderRadius.circular(16),
 
           side: BorderSide(
-            color: surfaceVariant,
+            color: brightness == Brightness.dark
+                ? Colors.white.withOpacity(0.05)
+                : surfaceVariant,
           ),
         ),
       ),
@@ -205,7 +206,9 @@ class AppTheme {
       InputDecorationTheme(
         filled: true,
 
-        fillColor: surfaceVariant,
+        fillColor: brightness == Brightness.dark
+            ? surface
+            : surfaceVariant,
 
         border: OutlineInputBorder(
           borderRadius:
@@ -227,7 +230,7 @@ class AppTheme {
 
           borderSide: BorderSide(
             color: primary,
-            width: 1.5,
+            width: 1.2,
           ),
         ),
 

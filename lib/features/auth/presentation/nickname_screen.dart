@@ -128,7 +128,7 @@ class _NicknameScreenState
                         .headline1
                         .copyWith(
                       color: isDark
-                          ? Colors.white
+                          ? AppColors.skyBlueLight
                           : context.cs.primary,
                     ),
                   ),
@@ -167,10 +167,8 @@ class _NicknameScreenState
                       '나를 잘 표현하는 별명을 추천해요.\n'
                           '본명이나 연락처는 사용하지 않는 것을 권장해요.',
 
-                      style: AppTextStyles
-                          .caption
-                          .copyWith(
-                        height: 1.5,
+                      style: AppTextStyles.caption.copyWith(
+                        color: context.cs.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -240,7 +238,7 @@ class _NicknameScreenState
                                 ? AppColors
                                 .meetoryPink
                                 .withOpacity(
-                                0.12)
+                                0.08)
                                 : Colors
                                 .transparent,
 
@@ -262,7 +260,7 @@ class _NicknameScreenState
                                 color: AppColors
                                     .meetoryPink
                                     .withOpacity(
-                                    0.18),
+                                    0.12),
 
                                 blurRadius:
                                 12,

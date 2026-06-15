@@ -94,7 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     BoxShadow(
                       color: isDark
                           ? AppColors.skyBlueLight
-                          .withOpacity(0.18)
+                          .withOpacity(0.12)
                           : context.cs.primary
                           .withOpacity(0.28),
                       blurRadius: 28,
@@ -141,7 +141,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(
                   color: context.cs.onSurfaceVariant,
-                  height: 1.7,
+                  height: 1.5,
                 ),
               ),
 
@@ -190,7 +190,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.darkSurfaceVariant
-                      .withOpacity(0.35)
+                      .withOpacity(0.60)
                       : AppColors.lightSurfaceVariant,
                   borderRadius: BorderRadius.circular(14),
                 ),

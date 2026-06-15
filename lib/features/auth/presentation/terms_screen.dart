@@ -149,7 +149,7 @@ class _TermsItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: value
               ? AppColors.meetoryPink.withOpacity(
-            isDark ? 0.16 : 0.10,
+            isDark ? 0.10 : 0.08,
           )
               : context.cs.surfaceContainerHighest,
 
@@ -160,7 +160,7 @@ class _TermsItem extends StatelessWidget {
             color: value
                 ? AppColors.meetoryPink
                 .withOpacity(
-              isDark ? 0.45 : 0.35,
+              isDark ? 0.28 : 0.20,
             )
                 : Colors.transparent,
 
