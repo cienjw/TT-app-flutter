@@ -97,11 +97,11 @@ class _TermsItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: value
-              ? context.cs.primary.withOpacity(0.12)   // 연한 스카이블루 배경
-              : context.cs.surfaceContainerHighest,     // 연한 회색 배경 (테마 대응)
+              ? AppColors.meetoryPink
+              : context.cs.onSurfaceVariant,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: value ? context.cs.primary : context.cs.onSurfaceVariant,
+            color: value ? context.cs.primary : Colors.transparent,
             width: 1.5,
           ),
         ),
@@ -109,7 +109,7 @@ class _TermsItem extends StatelessWidget {
           children: [
             Icon(
               value ? CupertinoIcons.check_mark_circled_solid : CupertinoIcons.circle,
-              color: value ? context.cs.primary.withOpacity(0.4) : Colors.transparent,
+              color: value ? context.cs.primary : context.cs.onSurfaceVariant,
               size: 24,
             ),
             const SizedBox(width: 12),

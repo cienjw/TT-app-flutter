@@ -93,7 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Meetory',
                 style: AppTextStyles.headline1.copyWith(
-                  color: context.cs.onSurface,  // 또는 테마에 맞게 반응하도록
+                  color: AppColors.meetoryNavy,
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
                 ),

@@ -28,8 +28,8 @@ class AppTheme {
   static ThemeData get darkTheme => _build(
     brightness: Brightness.dark,
     scheme: const ColorScheme.dark().copyWith(
-      primary: AppColors.meetorySkyBlue,  // 혹은 좀 더 밝은 Color(0xFFB8DCE8)
-      onPrimary: AppColors.darkBg,        // black 대신 darkBg로
+      primary: AppColors.skyBlueLight,
+      onPrimary: AppColors.black,
       secondary: AppColors.pinkLight,
       onSecondary: AppColors.black,
       surface: AppColors.darkSurface,
