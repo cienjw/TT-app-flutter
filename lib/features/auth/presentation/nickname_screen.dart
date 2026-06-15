@@ -75,18 +75,9 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-
-                  Text(
-                    '어떻게\n불러드릴까요?',
-                    style: AppTextStyles
-                        .headline1
-                        .copyWith(
-                      color: isDark
-                          ? AppColors.skyBlueLight
-                          : context.cs.primary,
-                    ),
-                  ),
-
+                  Text('어떻게\n불러드릴까요?', style: AppTextStyles.headline1.copyWith(
+                    color: context.cs.primary,
+                  )),
                   const SizedBox(height: 32),
                   TextField(
                     controller: _controller,
@@ -100,11 +91,9 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Text(
-                      '나를 잘 표현하는 별명을 추천해요.\n'
-                          '본명이나 연락처는 사용하지 않는 것을 권장해요.',
-
+                      '나를 잘 표현하는 별명을 추천해요. 안전한 만남을 위해 본명이나 연락처는 피해주세요.',
                       style: AppTextStyles.caption.copyWith(
-                        color: context.cs.onSurfaceVariant,
+                        height: 1.5,
                       ),
                     ),
                   ),
@@ -113,90 +102,24 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                     color: context.cs.secondary,
                   )),
                   const SizedBox(height: 24),
-
-                  GridView.builder(
-                    shrinkWrap: true,
-
-                    physics:
-                    const NeverScrollableScrollPhysics(),
-
-                    itemCount:
-                    ProfileAvatar
-                        .presets.length,
-
-                    gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-
-                      crossAxisSpacing: 16,
-
-                      mainAxisSpacing: 16,
-
-                      childAspectRatio: 1,
-                    ),
-
-                    itemBuilder: (_, i) {
-                      final selected =
-                          _selectedAvatar ==
-                              i;
-
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedAvatar =
-                                i;
-                          });
-                        },
-
-                        child:
-                        AnimatedContainer(
-                          duration:
-                          const Duration(
-                            milliseconds:
-                            180,
-                          ),
-
-                          decoration:
-                          BoxDecoration(
-                            shape:
-                            BoxShape.circle,
-
-                            color: selected
-                                ? AppColors
-                                .meetoryPink
-                                .withOpacity(
-                                0.08)
-                                : Colors
-                                .transparent,
-
-                            border:
-                            Border.all(
-                              color: selected
-                                  ? AppColors
-                                  .meetoryPink
-                                  : Colors
-                                  .transparent,
-
-                              width: 2,
-                            ),
-
-                            boxShadow:
-                            selected
-                                ? [
-                              BoxShadow(
-                                color: AppColors
-                                    .meetoryPink
-                                    .withOpacity(
-                                    0.12),
-
-                                blurRadius:
-                                12,
-
-                                offset:
-                                const Offset(
-                                  0,
-                                  4,
-                                ),
+              GridView.count(
+                crossAxisCount: 4,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: List.generate(ProfileAvatar.presets.length, (i) {
+                        final selected = _selectedAvatar == i;
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedAvatar = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: selected ? context.cs.secondary : Colors.transparent,
+                                width: 3,
                               ),
                               boxShadow: selected ? [
                                 BoxShadow(
@@ -214,7 +137,6 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
                         );
                       }),
                     ),
-                  ),
                   const Spacer(),
                   const SizedBox(height: 40),
                   AppButton(

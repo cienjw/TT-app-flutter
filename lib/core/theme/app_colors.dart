@@ -46,18 +46,11 @@ class AppColors {
 
   // 기존 검정 → 네이비 기반으로 변경
 
-  static const darkBg = Color(0xFF181C24);
-
-  static const darkSurface = Color(0xFF232833);
-
-  static const darkSurfaceVariant =
-  Color(0xFF2E3442);
-
-  static const darkTextSecondary =
-  Color(0xFFC4CAD6);
-
-  static const darkTextHint =
-  Color(0xFF99A3B5);
+  static const darkBg              = Color(0xFF111318); // 순수 검정 → 부드러운 다크
+  static const darkSurface         = Color(0xFF1A1D24);
+  static const darkSurfaceVariant  = Color(0xFF252830);
+  static const darkTextSecondary   = Color(0xFFB8BCC8); // 기존 0xFFA1A1AA보다 밝게
+  static const darkTextHint        = Color(0xFF8B909E); // 기존 0xFF71717A보다 밝게
 
   static const darkTextPrimary = white;
 
