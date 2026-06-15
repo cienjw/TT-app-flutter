@@ -6,37 +6,45 @@ class AppTheme {
   static ThemeData get lightTheme => _build(
     brightness: Brightness.light,
     scheme: const ColorScheme.light().copyWith(
-      primary: AppColors.black, onPrimary: AppColors.white,
-      secondary: AppColors.black, onSecondary: AppColors.white,
-      surface: AppColors.lightSurface, onSurface: AppColors.lightTextPrimary,
+      primary: AppColors.meetoryNavy,
+      onPrimary: AppColors.white,
+      secondary: AppColors.meetoryPink,
+      onSecondary: AppColors.white,
+      surface: AppColors.lightSurface,
+      onSurface: AppColors.lightTextPrimary,
       surfaceContainerHighest: AppColors.lightSurfaceVariant,
       onSurfaceVariant: AppColors.lightTextSecondary,
-      error: AppColors.error, onError: AppColors.white,
+      error: AppColors.error,
+      onError: AppColors.white,
     ),
     scaffoldBg: AppColors.lightBg,
     surface: AppColors.lightSurface,
     surfaceVariant: AppColors.lightSurfaceVariant,
     onSurface: AppColors.lightTextPrimary,
     hint: AppColors.lightTextHint,
-    primary: AppColors.black,
+    primary: AppColors.meetorySkyBlue,
   );
 
   static ThemeData get darkTheme => _build(
     brightness: Brightness.dark,
     scheme: const ColorScheme.dark().copyWith(
-      primary: AppColors.white, onPrimary: AppColors.black,
-      secondary: AppColors.white, onSecondary: AppColors.black,
-      surface: AppColors.darkSurface, onSurface: AppColors.darkTextPrimary,
+      primary: AppColors.skyBlueLight,
+      onPrimary: AppColors.black,
+      secondary: AppColors.pinkLight,
+      onSecondary: AppColors.black,
+      surface: AppColors.darkSurface,
+      onSurface: AppColors.darkTextPrimary,
       surfaceContainerHighest: AppColors.darkSurfaceVariant,
       onSurfaceVariant: AppColors.darkTextSecondary,
-      error: AppColors.error, onError: AppColors.black,
+      error: AppColors.error,
+      onError: AppColors.black,
     ),
     scaffoldBg: AppColors.darkBg,
     surface: AppColors.darkSurface,
     surfaceVariant: AppColors.darkSurfaceVariant,
     onSurface: AppColors.darkTextPrimary,
     hint: AppColors.darkTextHint,
-    primary: AppColors.white,
+    primary: AppColors.skyBlueLight,
   );
 
   static ThemeData _build({
@@ -67,21 +75,33 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: scheme.primary, width: 1.5),
+          ),
           elevation: 0,
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          backgroundColor: scheme.primary,
+          foregroundColor: scheme.onPrimary,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(double.infinity, 52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          side: BorderSide(color: surfaceVariant),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: BorderSide(color: scheme.primary, width: 1.5),
+          foregroundColor: scheme.primary,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -104,11 +124,11 @@ class AppTheme {
         filled: true,
         fillColor: surfaceVariant,
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: primary, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: TextStyle(color: hint),
