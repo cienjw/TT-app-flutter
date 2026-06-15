@@ -36,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => isNewUser ? const TermsScreen() : MainScreen(),
+          builder: (_) => isNewUser ? const TermsScreen() : const MainScreen(),
         ),
       );
     } catch (e) {
@@ -64,75 +64,99 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const Spacer(flex: 3),
               
-              // Meetory Logo Placeholder (or Icon)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundBlue.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
+              // Meetory Logo & App Icon
+              Center(
+                child: Column(
                   children: [
-                    const Icon(
-                      Icons.auto_stories_rounded,
-                      size: 80,
-                      color: AppColors.primaryBlue,
+                    Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryBlue.withOpacity(0.15),
+                            blurRadius: 25,
+                            offset: const Offset(0, 10),
+                          )
+                        ],
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 책 모양 아이콘 (로고 기반)
+                          const Icon(
+                            Icons.auto_stories_rounded,
+                            size: 64,
+                            color: AppColors.primaryBlue,
+                          ),
+                          // 말풍선 핑크 (로고 기반)
+                          Positioned(
+                            top: 15,
+                            left: 15,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryPink.withOpacity(0.9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.chat_bubble_rounded, size: 16, color: Colors.white),
+                            ),
+                          ),
+                          // 말풍선 블루 (로고 기반)
+                          Positioned(
+                            top: 15,
+                            right: 15,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withOpacity(0.9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.chat_bubble_rounded, size: 16, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryPink,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.chat_bubble_rounded,
-                          size: 20,
-                          color: Colors.white,
-                        ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      'Meetory',
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.primaryBlue,
+                        letterSpacing: -1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '이야기가 만나는 특별한 순간',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
               
-              const Text(
-                'Meetory',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryBlue,
-                  letterSpacing: -1,
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              Text(
-                '이야기가 만나는 곳,\n우리의 새로운 인연',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.headline2.copyWith(
-                  height: 1.4,
-                  color: AppColors.textPrimary.withOpacity(0.8),
-                ),
-              ),
-              
-              const Spacer(flex: 2),
+              const Spacer(flex: 4),
 
               AppButton(
                 label: '카카오로 시작하기',
                 variant: AppButtonVariant.kakao,
                 isLoading: _loading == 'kakao',
-                icon: const Icon(Icons.chat_bubble, size: 20, color: Colors.black87),
+                icon: const Icon(Icons.chat_bubble_rounded, size: 20, color: Colors.black87),
                 onPressed: busy
                     ? null
                     : () => _handleLogin(
                     'kakao', ref.read(authProvider.notifier).loginWithKakao),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               AppButton(
                 label: 'Google로 시작하기',
                 variant: AppButtonVariant.google,
@@ -148,10 +172,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
 
               const SizedBox(height: 40),
-              Text(
-                '로그인 시 서비스 이용약관 및\n개인정보처리방침에 동의하는 것으로 간주됩니다.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.caption.copyWith(fontSize: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  '로그인 시 서비스 이용약관 및\n개인정보처리방침에 동의하는 것으로 간주됩니다.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.caption.copyWith(fontSize: 12, height: 1.5),
+                ),
               ),
               const SizedBox(height: 24),
             ],

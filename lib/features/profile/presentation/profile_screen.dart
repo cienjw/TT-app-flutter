@@ -9,6 +9,7 @@ import '../data/profile_repository.dart';
 import '../domain/profile_provider.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
+import '../../../shared/widgets/profile_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -17,7 +18,8 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('로그아웃'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('정말 로그아웃하시겠어요?'),
         actions: [
           TextButton(
@@ -26,7 +28,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('로그아웃', style: TextStyle(color: AppColors.error)),
+            child: const Text('로그아웃', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -56,49 +58,44 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('프로필'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('마이페이지', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 20)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 12),
+        ],
       ),
       body: profileAsync.when(
         data: (profile) => ListView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 24),
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildProfileHeader(context, profile),
+            const SizedBox(height: 36),
+            const Text('계정 설정', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+            const SizedBox(height: 12),
+            _buildMenuSection([
+              _MenuTile(icon: Icons.edit_rounded, label: '내 정보 수정', onTap: () {}),
+              _MenuTile(icon: Icons.notifications_rounded, label: '알림 설정', onTap: () {}),
+              _MenuTile(icon: Icons.block_rounded, label: '차단 관리', onTap: () {}),
+            ]),
+            const SizedBox(height: 28),
+            const Text('기타', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textPrimary)),
+            const SizedBox(height: 12),
+            _buildMenuSection([
+              _MenuTile(icon: Icons.help_rounded, label: '이용 가이드', onTap: () {}),
+              _MenuTile(icon: Icons.info_rounded, label: '앱 정보', onTap: () {}),
+              _MenuTile(icon: Icons.logout_rounded, label: '로그아웃', isDestructive: true, onTap: () => _logout(context, ref)),
+            ]),
             const SizedBox(height: 40),
-            Text('계정 설정', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _MenuTile(
-              icon: Icons.edit_outlined,
-              label: '내 정보 수정',
-              onTap: () {},
-            ),
-            _MenuTile(
-              icon: Icons.notifications_none_rounded,
-              label: '알림 설정',
-              onTap: () {},
-            ),
-            _MenuTile(
-              icon: Icons.block_flipped,
-              label: '차단 관리',
-              onTap: () {},
-            ),
-            const SizedBox(height: 24),
-            Text('기타', style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _MenuTile(
-              icon: Icons.help_outline_rounded,
-              label: '이용 가이드',
-              onTap: () {},
-            ),
-            _MenuTile(
-              icon: Icons.logout_rounded,
-              label: '로그아웃',
-              isDestructive: true,
-              onTap: () => _logout(context, ref),
-            ),
           ],
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue)),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -112,55 +109,66 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: AppColors.backgroundBlue.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          colors: [AppColors.primaryBlue.withOpacity(0.1), AppColors.primaryBlue.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.1)),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.primaryBlue, width: 2),
+          ProfileAvatar(radius: 44, imageId: profile.avatarId),
+          const SizedBox(height: 20),
+          Text(profile.nickname, style: AppTextStyles.headline2.copyWith(fontSize: 24)),
+          const SizedBox(height: 8),
+          if (profile.mbti != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPink.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                profile.mbti!,
+                style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 1),
+              ),
             ),
-            child: const CircleAvatar(
-              radius: 36,
-              backgroundColor: AppColors.backgroundBlue,
-              child: Icon(Icons.person_rounded, size: 40, color: AppColors.primaryBlue),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(profile.nickname, style: AppTextStyles.headline2),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: profile.interests.isEmpty
-                      ? [const Text('관심사를 설정해보세요', style: AppTextStyles.caption)]
-                      : profile.interests.take(3).map((interest) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      interest,
-                      style: const TextStyle(fontSize: 12, color: AppColors.primaryBlue, fontWeight: FontWeight.bold),
-                    ),
-                  )).toList(),
-                ),
-              ],
-            ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: profile.interests.isEmpty
+                ? [const Text('관심사를 설정해보세요', style: AppTextStyles.caption)]
+                : profile.interests.map((interest) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 5)],
+              ),
+              child: Text(
+                interest,
+                style: const TextStyle(fontSize: 13, color: AppColors.primaryBlue, fontWeight: FontWeight.bold),
+              ),
+            )).toList(),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMenuSection(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.lightGrey.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(children: children),
     );
   }
 }
@@ -183,18 +191,22 @@ class _MenuTile extends StatelessWidget {
     final color = isDestructive ? AppColors.error : AppColors.textPrimary;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 24),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: color, size: 20),
+            ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(label, style: AppTextStyles.body.copyWith(color: color, fontSize: 16)),
+              child: Text(label, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w500)),
             ),
             if (!isDestructive)
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+              const Icon(Icons.chevron_right_rounded, color: AppColors.textHint, size: 22),
           ],
         ),
       ),

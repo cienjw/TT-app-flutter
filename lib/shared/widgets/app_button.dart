@@ -46,7 +46,7 @@ class AppButton extends StatelessWidget {
         ),
         AppButtonVariant.secondary => FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryBlue,
+            backgroundColor: AppColors.primaryPink, // 보조 버튼을 핑크로 변경
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: isLoading ? null : onPressed,
@@ -54,15 +54,15 @@ class AppButton extends StatelessWidget {
         ),
         AppButtonVariant.outlined => OutlinedButton(
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.primaryPink),
+            side: const BorderSide(color: AppColors.primaryBlue),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildContent(context, color: AppColors.primaryPink),
+          child: _buildContent(context, color: AppColors.primaryBlue),
         ),
         AppButtonVariant.filled => FilledButton(
           style: FilledButton.styleFrom(
-            backgroundColor: AppColors.primaryPink,
+            backgroundColor: AppColors.primaryBlue, // 기본 버튼을 파란색으로 변경
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           onPressed: isLoading ? null : onPressed,

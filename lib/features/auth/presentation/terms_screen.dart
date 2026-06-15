@@ -23,8 +23,10 @@ class _TermsScreenState extends State<TermsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -42,7 +44,7 @@ class _TermsScreenState extends State<TermsScreen> {
               const SizedBox(height: 12),
               Text(
                 '안전하고 즐거운 만남을 위해\n꼭 필요한 절차예요.',
-                style: AppTextStyles.bodySmall,
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 48),
 
@@ -104,10 +106,10 @@ class _TermsItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.lightGrey,
+          color: value ? AppColors.backgroundBlue : AppColors.lightGrey,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: value ? AppColors.primaryPink.withOpacity(0.5) : Colors.transparent,
+            color: value ? AppColors.primaryBlue.withOpacity(0.5) : Colors.transparent,
             width: 1,
           ),
         ),
@@ -115,7 +117,7 @@ class _TermsItem extends StatelessWidget {
           children: [
             Icon(
               value ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-              color: value ? AppColors.primaryPink : AppColors.textHint,
+              color: value ? AppColors.primaryBlue : AppColors.textHint,
               size: 24,
             ),
             const SizedBox(width: 12),
