@@ -6,7 +6,8 @@ import '../data/survey_data.dart';
 import 'survey_mbti_screen.dart';
 
 class SurveyQuestionsScreen extends StatefulWidget {
-  const SurveyQuestionsScreen({super.key});
+  final bool isEdit;
+  const SurveyQuestionsScreen({super.key, this.isEdit = false});
 
   @override
   State<SurveyQuestionsScreen> createState() => _SurveyQuestionsScreenState();
@@ -17,24 +18,28 @@ class _SurveyQuestionsScreenState extends State<SurveyQuestionsScreen> {
   final List<SurveyOption?> _answers =
   List.filled(surveyQuestions.length, null);
   int _current = 0;
+  bool _locked = false;
 
   void _select(int qIndex, SurveyOption option) {
+    if (_locked) return;              // 전환 중 추가 탭 무시
+    _locked = true;
     setState(() => _answers[qIndex] = option);
-    Future.delayed(const Duration(milliseconds: 220), () {
+    Future.delayed(const Duration(milliseconds: 220), () async {
       if (!mounted) return;
       if (qIndex < surveyQuestions.length - 1) {
-        _pageController.nextPage(
+        await _pageController.nextPage(
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOut,
         );
+        if (mounted) _locked = false; // 전환 끝나면 해제
       } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                SurveyMbtiScreen(answers: _answers.cast<SurveyOption>()),
+        _locked = false;
+        Navigator.push(context, MaterialPageRoute(
+          builder: (_) => SurveyMbtiScreen(
+            answers: _answers.cast<SurveyOption>(),
+            isEdit: widget.isEdit,
           ),
-        );
+        ));
       }
     });
   }

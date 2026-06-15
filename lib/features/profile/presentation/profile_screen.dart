@@ -13,7 +13,7 @@ import '../../footprints/domain/footprint_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'blocked_users_screen.dart';
 import 'edit_profile_screen.dart';
-import 'edit_interests_screen.dart';
+import '../../auth/presentation/survey_questions_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -116,7 +116,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: CupertinoIcons.heart,
               label: '관심사 재설정',
               onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const EditInterestsScreen())),
+                  MaterialPageRoute(builder: (_) => const SurveyQuestionsScreen(isEdit: true))),
             ),
             _MenuTile(
               icon: CupertinoIcons.bell,
