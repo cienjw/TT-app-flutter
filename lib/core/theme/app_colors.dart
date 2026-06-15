@@ -5,13 +5,15 @@ class AppColors {
   static const black = Color(0xFF000000);
   static const white = Color(0xFFFFFFFF);
 
-  // Meetory 공식 색상
-  static const meetorySkyBlue = Color(0xFF3A445D); // Twilight Indigo (Press Kit 기반, 실제론 진한 파랑/하늘색 느낌)
-  static const meetoryPink = Color(0xFFE06952);    // Burnt Peach (Press Kit 기반, 실제론 핑크/오렌지 느낌)
+  // Meetory 공식 컬러
+  static const meetoryNavy = Color(0xFF3A445D);
+  static const meetoryPink = Color(0xFFE06952);
+  static const meetorySkyBlue = Color(0xFF9CC7D8);
 
-  // 보조 색상 (하늘색/핑크색의 더 밝은 버전)
-  static const skyBlueLight = Color(0xFF82C8E5);
+  // 밝은 버전
+  static const navyLight = Color(0xFF55627E);
   static const pinkLight = Color(0xFFFF8DA1);
+  static const skyBlueLight = Color(0xFFB8DCE8);
 
   // 기존 호환 이름 (라이트 기준값)
   static const primary         = meetorySkyBlue;

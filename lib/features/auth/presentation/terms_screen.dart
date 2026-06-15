@@ -96,7 +96,9 @@ class _TermsItem extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: value ? context.cs.primary.withOpacity(0.05) : context.cs.surfaceVariant.withOpacity(0.5),
+          color: value
+              ? AppColors.meetoryPink
+              : context.cs.onSurfaceVariant,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: value ? context.cs.primary : Colors.transparent,

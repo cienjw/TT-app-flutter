@@ -70,10 +70,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Container(
                 width: 80, height: 80,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [context.cs.primary, context.cs.secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  gradient: const LinearGradient(
+                    colors: [
+                      AppColors.meetoryPink,
+                      AppColors.meetorySkyBlue,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
@@ -92,7 +93,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Meetory',
                 style: AppTextStyles.headline1.copyWith(
-                  color: context.cs.primary,
+                  color: AppColors.meetoryNavy,
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
                 ),

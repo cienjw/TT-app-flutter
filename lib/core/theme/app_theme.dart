@@ -6,7 +6,7 @@ class AppTheme {
   static ThemeData get lightTheme => _build(
     brightness: Brightness.light,
     scheme: const ColorScheme.light().copyWith(
-      primary: AppColors.meetorySkyBlue,
+      primary: AppColors.meetoryNavy,
       onPrimary: AppColors.white,
       secondary: AppColors.meetoryPink,
       onSecondary: AppColors.white,
