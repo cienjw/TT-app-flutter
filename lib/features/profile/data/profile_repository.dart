@@ -75,8 +75,9 @@ class ProfileRepository {
     final res = await ApiClient.dio.get('/api/users/me');
     return UserProfile.fromJson(res.data as Map<String, dynamic>);
   }
+
+  Future<void> deleteAccount() async {
+    await ApiClient.dio.delete('/api/users/me');
+  }
 }
 
-Future<void> deleteAccount() async {
-  await ApiClient.dio.delete('/api/users/me');
-}

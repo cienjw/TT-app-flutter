@@ -55,7 +55,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteAccount() async {
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -72,18 +72,21 @@ class ProfileScreen extends ConsumerWidget {
     );
     if (ok != true) return;
     try {
-      await ProfileRepository().deleteAccount();   // 네 repo 접근 방식에 맞춰서
-      await SecureStorage.clear();                  // 토큰 삭제 (메서드명은 기존 로그아웃 참고)
-      if (!mounted) return;
+      await ProfileRepository().deleteAccount();
+      SocketClient.disconnect();
+      await SecureStorage.clearAll();          // ← clear 아니라 clearAll
+      ref.invalidate(myProfileProvider);
+      ref.invalidate(myGroupsProvider);
+      ref.invalidate(footprintsProvider);
+      if (!context.mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,                           // 스택 싹 비우고 로그인으로
+            (route) => false,
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('탈퇴 실패: $e')));
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('탈퇴 실패: $e')));
     }
   }
 
@@ -130,6 +133,12 @@ class ProfileScreen extends ConsumerWidget {
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
+            ),
+            _MenuTile(
+              icon: CupertinoIcons.delete,
+              label: '회원 탈퇴',
+              isDestructive: true,
+              onTap: () => _deleteAccount(context, ref),
             ),
           ],
         ),
