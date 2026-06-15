@@ -17,8 +17,8 @@ class ChatroomsScreen extends ConsumerStatefulWidget {
 
 class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _bluetoothOn = false;
-  bool _isMatching = false; // enqueue 요청 중
-  bool _isWaiting = false;  // 대기열에 올라가 있음
+  bool _isMatching = false;
+  bool _isWaiting = false;
   double _matchThreshold = 0.85;
   Timer? _pollTimer;
   bool _isSearching = false;
@@ -28,13 +28,13 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   void initState() {
     super.initState();
-    _checkMatchingStatus(); // 화면 진입 시 이미 대기 중인지 복원
+    _checkMatchingStatus();
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _searchCtrl.dispose();   // ← 여기로 이동
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -46,14 +46,14 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         setState(() => _isWaiting = true);
         _startPolling();
       }
-    } catch (_) {/* 무시 */}
+    } catch (_) {}
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       if (!mounted) return;
-      ref.invalidate(myGroupsProvider); // 새 방 생기면 목록에 반영
+      ref.invalidate(myGroupsProvider);
       try {
         final status = await ref.read(groupRepoProvider).getMatchingStatus();
         if (!mounted) return;
@@ -63,7 +63,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             const SnackBar(content: Text('매칭 완료! 새 모임이 열렸어요.')),
           );
         }
-      } catch (_) {/* 무시 */}
+      } catch (_) {}
     });
   }
 
@@ -75,6 +75,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
   Future<void> _runMatching() async {
     setState(() => _isMatching = true);
+    final theme = Theme.of(context);
     try {
       await ref.read(groupRepoProvider).joinMatching(threshold: _matchThreshold);
       if (!mounted) return;
@@ -86,7 +87,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
+        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: Colors.redAccent),
       );
     } finally {
       if (mounted) setState(() => _isMatching = false);
@@ -94,11 +95,11 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Future<void> _cancelMatching() async {
-    _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
+    _pollTimer?.cancel();
     _pollTimer = null;
     try {
       await ref.read(groupRepoProvider).cancelMatching();
-    } catch (_) {/* 무시 */}
+    } catch (_) {}
     if (!mounted) return;
     setState(() => _isWaiting = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -109,6 +110,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   Widget build(BuildContext context) {
     final groupsAsync = ref.watch(myGroupsProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,13 +118,12 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             ? TextField(
           controller: _searchCtrl,
           autofocus: true,
-          style: AppTextStyles.body,
-          cursorColor: context.cs.primary,
+          style: AppTextStyles.body.copyWith(color: theme.textTheme.bodyLarge?.color),
+          cursorColor: theme.primaryColor,
           decoration: InputDecoration(
             hintText: '채팅방 이름 검색',
             border: InputBorder.none,
-            hintStyle: AppTextStyles.body
-                .copyWith(color: context.cs.onSurfaceVariant),
+            hintStyle: AppTextStyles.body.copyWith(color: theme.textTheme.bodyMedium?.color),
           ),
           onChanged: (v) => setState(() => _searchQuery = v),
         )
@@ -150,28 +151,25 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           children: [
             if (!_isSearching) ...[
-              _buildMatchingCard(),
+              _buildMatchingCard(theme),
               const SizedBox(height: 24),
             ],
             groupsAsync.when(
               data: (groups) {
                 final filtered = _searchQuery.isEmpty
                     ? groups
-                    : groups
-                    .where((g) => g.name.contains(_searchQuery))
-                    .toList();
-                if (groups.isEmpty) return _emptyState();
+                    : groups.where((g) => g.name.contains(_searchQuery)).toList();
+                if (groups.isEmpty) return _emptyState(theme);
                 if (filtered.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: Text("'$_searchQuery'와 일치하는 채팅방이 없어요",
-                          style: AppTextStyles.caption),
+                          style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
                     ),
                   );
                 }
-                return Column(
-                    children: filtered.map((g) => _buildRoomCard(g)).toList());
+                return Column(children: filtered.map((g) => _buildRoomCard(g, theme)).toList());
               },
               loading: () => const Padding(
                 padding: EdgeInsets.all(40),
@@ -188,52 +186,48 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildMatchingCard() {
-    if (_isWaiting) return _buildWaitingCard();
+  Widget _buildMatchingCard(ThemeData theme) {
+    if (_isWaiting) return _buildWaitingCard(theme);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.cs.surfaceContainerHighest,
+        color: theme.cardColor,
+        border: Border.all(color: theme.dividerColor),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('채팅방 매칭', style: AppTextStyles.title),
+          Text('채팅방 매칭', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
           const SizedBox(height: 4),
-          Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
+          Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
           const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: context.cs.surface,
+              color: theme.scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               children: [
                 Icon(Icons.bluetooth,
                     size: 22,
-                    color: _bluetoothOn
-                        ? context.cs.primary
-                        : context.cs.onSurfaceVariant),
+                    color: _bluetoothOn ? theme.primaryColor : theme.textTheme.bodyMedium?.color),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('주변 탐색',
-                          style: AppTextStyles.body
-                              .copyWith(fontWeight: FontWeight.w600)),
-                      Text('가까이 있는 사람을 우선 찾아요',
-                          style: AppTextStyles.caption),
+                      Text('주변 탐색', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: theme.textTheme.bodyLarge?.color)),
+                      Text('가까이 있는 사람을 우선 찾아요', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
                     ],
                   ),
                 ),
                 Switch(
                   value: _bluetoothOn,
-                  activeColor: context.cs.primary,
+                  activeColor: theme.primaryColor,
                   onChanged: (v) => setState(() => _bluetoothOn = v),
                 ),
               ],
@@ -242,21 +236,19 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           const SizedBox(height: 18),
           Row(
             children: [
-              Text('관심사 일치도',
-                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
+              Text('관심사 일치도', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: theme.textTheme.bodyLarge?.color)),
               const Spacer(),
               Text('${(_matchThreshold * 100).round()}% 이상',
-                  style: AppTextStyles.body.copyWith(
-                      color: context.cs.primary, fontWeight: FontWeight.w700)),
+                  style: AppTextStyles.body.copyWith(color: theme.primaryColor, fontWeight: FontWeight.w700)),
             ],
           ),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               trackHeight: 4,
-              activeTrackColor: context.cs.primary,
-              inactiveTrackColor: context.cs.surface,
-              thumbColor: context.cs.primary,
-              overlayColor: context.cs.primary.withOpacity(0.15),
+              activeTrackColor: theme.primaryColor,
+              inactiveTrackColor: theme.dividerColor,
+              thumbColor: theme.primaryColor,
+              overlayColor: theme.primaryColor.withOpacity(0.15),
             ),
             child: Slider(
               value: _matchThreshold,
@@ -270,20 +262,20 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             _matchThreshold >= 0.99
                 ? '나와 완벽히 일치하는 사람만 기다려요'
                 : '관심사가 ${(_matchThreshold * 100).round()}% 이상 맞는 사람과 연결돼요',
-            style: AppTextStyles.caption,
+            style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color),
           ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: theme.primaryColor),
               onPressed: _isMatching ? null : _runMatching,
               child: _isMatching
                   ? SizedBox(
                   width: 18, height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: context.cs.onPrimary))
-                  : const Text('매칭하기'),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: theme.brightness == Brightness.dark ? Colors.black : Colors.white))
+                  : Text('매칭하기', style: TextStyle(color: theme.brightness == Brightness.dark ? Colors.black : Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -291,12 +283,13 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildWaitingCard() {
+  Widget _buildWaitingCard(ThemeData theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: context.cs.surfaceContainerHighest,
+        color: theme.cardColor,
+        border: Border.all(color: theme.primaryColor.withOpacity(0.5)),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -304,19 +297,23 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('맞는 친구를 찾는 중', style: AppTextStyles.title),
+              Text('맞는 친구를 찾는 중', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
               const SizedBox(width: 10),
-              _PulsingDots(color: context.cs.primary),
+              _PulsingDots(color: theme.primaryColor),
             ],
           ),
           const SizedBox(height: 8),
           Text('조건에 맞는 사람이 모이면 자동으로 모임이 열려요',
-              textAlign: TextAlign.center, style: AppTextStyles.caption),
+              textAlign: TextAlign.center, style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: theme.primaryColor,
+                side: BorderSide(color: theme.primaryColor),
+              ),
               onPressed: _cancelMatching,
               child: const Text('매칭 취소'),
             ),
@@ -326,7 +323,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildRoomCard(GroupSummary group) {
+  Widget _buildRoomCard(GroupSummary group, ThemeData theme) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -342,51 +339,48 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: context.cs.surface,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.cs.surfaceContainerHighest),
+          border: Border.all(color: theme.dividerColor),
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 26,
-              backgroundColor: context.cs.surfaceContainerHighest,
-              child: Icon(CupertinoIcons.person_3_fill,
-                  color: context.cs.onSurfaceVariant),
+              backgroundColor: theme.dividerColor.withOpacity(0.2),
+              child: Icon(CupertinoIcons.person_3_fill, color: theme.textTheme.bodyMedium?.color),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${group.name} (${group.memberCount}명)',
-                      style: AppTextStyles.title),
+                  Text('${group.name} (${group.memberCount}명)', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
                   const SizedBox(height: 4),
                   Text(group.lastMessage ?? '아직 대화가 없어요',
-                      style: AppTextStyles.caption,
+                      style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color),
                       maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
+            Icon(CupertinoIcons.chevron_right, color: theme.textTheme.bodyMedium?.color),
           ],
         ),
       ),
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: Text('아직 참여한 채팅방이 없어요.\n매칭하기를 눌러 시작해보세요!',
-            textAlign: TextAlign.center, style: AppTextStyles.caption),
+            textAlign: TextAlign.center, style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
       ),
     );
   }
 }
 
-// 대기 중 맥동하는 점 3개
 class _PulsingDots extends StatefulWidget {
   final Color color;
   const _PulsingDots({required this.color});
@@ -395,16 +389,13 @@ class _PulsingDots extends StatefulWidget {
   State<_PulsingDots> createState() => _PulsingDotsState();
 }
 
-class _PulsingDotsState extends State<_PulsingDots>
-    with SingleTickerProviderStateMixin {
+class _PulsingDotsState extends State<_PulsingDots> with SingleTickerProviderStateMixin {
   late final AnimationController _c;
 
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1000))
-      ..repeat();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat();
   }
 
   @override

@@ -20,22 +20,23 @@ class FootprintsScreen extends ConsumerStatefulWidget {
 class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   NaverMapController? _controller;
   double _bearing = 0;
-  double _sheetExtent = 0.24; // 하단 시트의 현재 높이 비율 (initialChildSize와 동일)
+  double _sheetExtent = 0.24;
 
   static const _fallback = NLatLng(36.9921, 127.1129);
 
   @override
   Widget build(BuildContext context) {
     final footprintsAsync = ref.watch(footprintsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     ref.listen(footprintsProvider, (_, next) {
       next.whenData(_syncMarkers);
     });
 
     final screenH = MediaQuery.of(context).size.height;
-    final myLocBottom = screenH * _sheetExtent + 12; // 시트 바로 위
-    final compassBottom = myLocBottom + 52; // 위치 버튼 바로 위
+    final myLocBottom = screenH * _sheetExtent + 12;
+    final compassBottom = myLocBottom + 52;
 
     return Scaffold(
       body: NotificationListener<DraggableScrollableNotification>(
@@ -48,10 +49,9 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
             Positioned.fill(
               child: NaverMap(
                 options: NaverMapViewOptions(
-                  initialCameraPosition:
-                  const NCameraPosition(target: _fallback, zoom: 12),
-                  mapType: isDark ? NMapType.navi : NMapType.basic, // 라이트=basic, 다크=navi
-                  nightModeEnable: isDark,                          // navi일 때만 실제로 먹힘
+                  initialCameraPosition: const NCameraPosition(target: _fallback, zoom: 12),
+                  mapType: isDark ? NMapType.navi : NMapType.basic,
+                  nightModeEnable: isDark,
                   locationButtonEnable: false,
                 ),
                 onMapReady: _onMapReady,
@@ -60,7 +60,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
               ),
             ),
 
-            // 상단 안내 칩
             SafeArea(
               child: Align(
                 alignment: Alignment.topCenter,
@@ -68,17 +67,18 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                   margin: const EdgeInsets.all(12),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
-                    color: context.cs.surface,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
                   ),
-                  child: Text('같은 관심사를 가진 사람들이 다녀간 곳이에요',
-                      style: AppTextStyles.caption),
+                  child: Text(
+                    '같은 관심사를 가진 사람들이 다녀간 곳이에요',
+                    style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyLarge?.color),
+                  ),
                 ),
               ),
             ),
 
-            // 나침반: 회전 시에만 표시, 위치 버튼 바로 위
             if (_bearing.abs() > 0.5)
               Positioned(
                 right: 16,
@@ -93,44 +93,39 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                     );
                     setState(() => _bearing = 0);
                   },
-                  // 나침반 컨테이너 (const Icon → Icon)
                   child: Container(
                     width: 44, height: 44,
                     decoration: BoxDecoration(
-                      color: context.cs.surface,
+                      color: theme.cardColor,
                       shape: BoxShape.circle,
                       boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
                     ),
                     child: Transform.rotate(
                       angle: -_bearing * math.pi / 180,
-                      child: Icon(CupertinoIcons.location_north_fill,
-                          color: context.cs.primary, size: 24),
+                      child: Icon(CupertinoIcons.location_north_fill, color: theme.primaryColor, size: 24),
                     ),
                   ),
                 ),
               ),
 
-            // 내 위치 버튼: 시트 바로 위에 붙어 따라다님
-            // 내 위치 버튼: 나침반과 동일한 원형 디자인
             Positioned(
               right: 16,
               bottom: myLocBottom,
               child: GestureDetector(
                 onTap: _goToMyLocation,
-                // 내 위치 버튼 (const Icon → Icon)
                 child: Container(
                   width: 44, height: 44,
                   decoration: BoxDecoration(
-                    color: context.cs.surface,
+                    color: theme.cardColor,
                     shape: BoxShape.circle,
                     boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
                   ),
-                  child: Icon(Icons.my_location, color: context.cs.primary, size: 22),
+                  child: Icon(Icons.my_location, color: theme.primaryColor, size: 22),
                 ),
               ),
             ),
 
-            _buildBottomSheet(footprintsAsync),
+            _buildBottomSheet(footprintsAsync, theme),
           ],
         ),
       ),
@@ -153,12 +148,10 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
       }
-      if (perm == LocationPermission.denied ||
-          perm == LocationPermission.deniedForever) return;
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) return;
 
       final lo = await controller.getLocationOverlay();
 
-      // ① 캐시된 위치로 즉시 이동 + 파란점 먼저 표시
       final last = await Geolocator.getLastKnownPosition();
       if (last != null) {
         final lastLatLng = NLatLng(last.latitude, last.longitude);
@@ -167,7 +160,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
         lo.setIsVisible(true);
       }
 
-      // ② 정확한 위치로 보정 (실패해도 위 파란점은 유지됨)
       try {
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
@@ -177,16 +169,14 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
         _moveCameraTo(controller, myLatLng);
         lo.setPosition(myLatLng);
         lo.setIsVisible(true);
-      } catch (_) {/* 캐시 위치로 이미 파란점 표시됨 */}
+      } catch (_) {}
     } catch (_) {}
   }
 
   void _moveCameraTo(NaverMapController controller, NLatLng target) {
     controller.updateCamera(
       NCameraUpdate.withParams(target: target)
-        ..setAnimation(
-            animation: NCameraAnimation.easing,
-            duration: const Duration(milliseconds: 400)),
+        ..setAnimation(animation: NCameraAnimation.easing, duration: const Duration(milliseconds: 400)),
     );
   }
 
@@ -201,12 +191,11 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   Future<void> _syncMarkers(List<Footprint> footprints) async {
     final controller = _controller;
     if (controller == null) return;
-    // _markersSynced 플래그 검사 제거, 대신 기존 마커 클리어 ✅
     controller.clearOverlays(type: NOverlayType.marker);
 
     for (final f in footprints) {
       final marker = NMarker(
-        id: 'fp_${f.groupId}', // 키가 같으면 덮어씌워지긴 함
+        id: 'fp_${f.groupId}',
         position: NLatLng(f.latitude, f.longitude),
         caption: NOverlayCaption(text: '${f.attendeeCount}명'),
       );
@@ -220,18 +209,16 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       NCameraUpdate.scrollAndZoomTo(
         target: NLatLng(f.latitude, f.longitude),
         zoom: 15,
-      )..setAnimation(
-          animation: NCameraAnimation.fly,
-          duration: const Duration(milliseconds: 600)),
+      )..setAnimation(animation: NCameraAnimation.fly, duration: const Duration(milliseconds: 600)),
     );
     _showDetail(f);
   }
 
   void _showDetail(Footprint f) {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
-      // _showDetail
-      backgroundColor: context.cs.surface,
+      backgroundColor: theme.cardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -239,7 +226,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
     );
   }
 
-  Widget _buildBottomSheet(AsyncValue<List<Footprint>> async) {
+  Widget _buildBottomSheet(AsyncValue<List<Footprint>> async, ThemeData theme) {
     return DraggableScrollableSheet(
       initialChildSize: 0.24,
       minChildSize: 0.12,
@@ -247,7 +234,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: context.cs.surface,
+            color: theme.scaffoldBackgroundColor, // 바닥 시트는 기본 배경색 사용
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
           ),
@@ -261,30 +248,26 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest,
+                      color: theme.dividerColor,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 4, bottom: 8),
-                  child: Text('최근 만남', style: AppTextStyles.title),
+                  child: Text('최근 만남', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
                 ),
                 if (footprints.isEmpty)
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: Center(
-                      child: Text('아직 기록된 만남이 없어요',
-                          style: AppTextStyles.caption),
+                      child: Text('아직 기록된 만남이 없어요', style: AppTextStyles.caption),
                     ),
                   )
                 else
                   ...footprints.map((f) => Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: _FootprintCard(
-                      footprint: f,
-                      onTap: () => _moveTo(f),
-                    ),
+                    child: _FootprintCard(footprint: f, onTap: () => _moveTo(f)),
                   )),
                 const SizedBox(height: 20),
               ],
@@ -292,8 +275,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Padding(
               padding: const EdgeInsets.all(20),
-              child: Text('발자취를 불러오지 못했어요: $e',
-                  style: AppTextStyles.caption),
+              child: Text('발자취를 불러오지 못했어요: $e', style: AppTextStyles.caption),
             ),
           ),
         );
@@ -309,16 +291,17 @@ class _FootprintCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dateStr = DateFormat('M월 d일').format(footprint.metAt);
-    final title = footprint.interests.isEmpty
-        ? footprint.groupName
-        : footprint.interests.join(' · ');
+    final title = footprint.interests.isEmpty ? footprint.groupName : footprint.interests.join(' · ');
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: context.cs.surfaceContainerHighest,
+          color: theme.cardColor,
+          border: Border.all(color: theme.dividerColor, width: 1),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
@@ -326,26 +309,27 @@ class _FootprintCard extends StatelessWidget {
             Container(
               width: 44, height: 44,
               decoration: BoxDecoration(
-                  color: context.cs.surface, shape: BoxShape.circle),
-              child: Icon(CupertinoIcons.placemark_fill,
-                  color: context.cs.onSurfaceVariant),
+                  color: theme.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle
+              ),
+              child: Icon(CupertinoIcons.placemark_fill, color: theme.primaryColor),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: AppTextStyles.body
-                          .copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                      title,
+                      style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: theme.textTheme.bodyLarge?.color),
+                      maxLines: 1, overflow: TextOverflow.ellipsis
+                  ),
                   const SizedBox(height: 2),
-                  Text('$dateStr · ${footprint.attendeeCount}명이 만났어요',
-                      style: AppTextStyles.caption),
+                  Text('$dateStr · ${footprint.attendeeCount}명이 만났어요', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
+            Icon(CupertinoIcons.chevron_right, color: theme.textTheme.bodyMedium?.color),
           ],
         ),
       ),
@@ -359,7 +343,9 @@ class _FootprintDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dateStr = DateFormat('yyyy년 M월 d일').format(footprint.metAt);
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
@@ -369,10 +355,9 @@ class _FootprintDetailSheet extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: context.cs.surfaceContainerHighest,
+                  color: theme.dividerColor,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -382,29 +367,26 @@ class _FootprintDetailSheet extends StatelessWidget {
               children: [
                 Container(
                   width: 48, height: 48,
-                  decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest, shape: BoxShape.circle),
-                  child: Icon(CupertinoIcons.person_3_fill,
-                      color: context.cs.onSurfaceVariant),
+                  decoration: BoxDecoration(color: theme.dividerColor.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(CupertinoIcons.person_3_fill, color: theme.primaryColor),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${footprint.attendeeCount}명이 모인 만남',
-                          style: AppTextStyles.title),
-                      Text(dateStr, style: AppTextStyles.caption),
+                      Text('${footprint.attendeeCount}명이 모인 만남', style: AppTextStyles.title.copyWith(color: theme.textTheme.bodyLarge?.color)),
+                      Text(dateStr, style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Text('이런 관심사를 가진 사람들이에요', style: AppTextStyles.caption),
+            Text('이런 관심사를 가진 사람들이에요', style: AppTextStyles.caption.copyWith(color: theme.textTheme.bodyMedium?.color)),
             const SizedBox(height: 10),
             if (footprint.interests.isEmpty)
-              Text('관심사 정보가 없어요', style: AppTextStyles.body)
+              Text('관심사 정보가 없어요', style: AppTextStyles.body.copyWith(color: theme.textTheme.bodyLarge?.color))
             else
               Wrap(
                 spacing: 8,
@@ -413,12 +395,13 @@ class _FootprintDetailSheet extends StatelessWidget {
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest,
+                      color: theme.primaryColor.withOpacity(0.1),
+                      border: Border.all(color: theme.primaryColor.withOpacity(0.3)),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(name,
                         style: AppTextStyles.body.copyWith(
-                            color: context.cs.onSurface, fontWeight: FontWeight.w600)),
+                            color: theme.primaryColor, fontWeight: FontWeight.w600)),
                   );
                 }).toList(),
               ),
