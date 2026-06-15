@@ -12,6 +12,8 @@ import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
 import 'blocked_users_screen.dart';
+import 'edit_profile_screen.dart';
+import 'edit_interests_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -107,7 +109,14 @@ class ProfileScreen extends ConsumerWidget {
             _MenuTile(
               icon: CupertinoIcons.pencil,
               label: '내 정보 수정',
-              onTap: () {}, // 추후 구현
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen())),
+            ),
+            _MenuTile(
+              icon: CupertinoIcons.heart,
+              label: '관심사 재설정',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const EditInterestsScreen())),
             ),
             _MenuTile(
               icon: CupertinoIcons.bell,

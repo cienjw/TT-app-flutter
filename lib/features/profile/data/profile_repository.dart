@@ -5,6 +5,7 @@ class UserProfile {
   final String nickname;
   final String? profileImg;
   final String? bio;
+  final List<int> interestIds;
   final List<String> interests;
   final double? surveyDepth;
   final double? surveyVirtuality;
@@ -14,6 +15,7 @@ class UserProfile {
 
   UserProfile({
     required this.id,
+    this.interestIds = const [],
     required this.nickname,
     this.profileImg,
     this.bio,
@@ -39,9 +41,14 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     final rawInterests = json['interests'] as List?;
+    final ids = <int>[];
     final names = <String>[];
     if (rawInterests != null) {
       for (final item in rawInterests) {
+        if (item is Map && item['id'] != null) {
+          final v = item['id'];
+          ids.add(v is int ? v : int.tryParse('$v') ?? 0);
+        }
         if (item is Map && item['name'] != null) {
           names.add(item['name'] as String);
         }
@@ -61,6 +68,7 @@ class UserProfile {
       profileImg: json['profile_img'] as String?,
       bio: json['bio'] as String?,
       interests: names,
+      interestIds: ids,
       surveyDepth: toD(json['survey_depth']),
       surveyVirtuality: toD(json['survey_virtuality']),
       surveyCollab: json['survey_collab'] as String?,
@@ -79,5 +87,35 @@ class ProfileRepository {
   Future<void> deleteAccount() async {
     await ApiClient.dio.delete('/api/users/me');
   }
+
+  Future<void> updateProfile({required String nickname, String? profileImg}) async {
+    await ApiClient.dio.put('/api/users/me', data: {
+      'nickname': nickname,
+      'profile_img': profileImg,
+    });
+  }
+
+  Future<List<InterestItem>> getAllInterests() async {
+    final res = await ApiClient.dio.get('/api/users/interests');
+    return (res.data as List)
+        .map((e) => InterestItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  Future<void> updateInterests(List<int> ids) async {
+    await ApiClient.dio.put('/api/users/me/interests', data: {'interest_ids': ids});
+  }
+}
+
+class InterestItem {
+  final int id;
+  final String name;
+  final String? category;
+  InterestItem({required this.id, required this.name, this.category});
+  factory InterestItem.fromJson(Map<String, dynamic> j) => InterestItem(
+    id: j['id'] is int ? j['id'] : int.tryParse('${j['id']}') ?? 0,
+    name: j['name'] as String? ?? '',
+    category: j['category'] as String?,
+  );
 }
 
