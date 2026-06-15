@@ -48,6 +48,7 @@ dependencies:
   flutter_naver_map: ^1.4.4
   scrollable_positioned_list: ^0.3.8
   flutter_slidable: ^4.0.3
+  flutter_ble_peripheral: ^2.1.1
 
 dev_dependencies:
   flutter_test:
