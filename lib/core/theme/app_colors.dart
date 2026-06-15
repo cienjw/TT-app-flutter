@@ -30,27 +30,31 @@ class AppColors {
 
   // ===== 라이트 테마 =====
 
-  static const Color lightBackground = Color(0xFFFFFFFF);
-  static const Color lightSurface = Color(0xFFF8F9FA);
-  static const Color lightPrimary = Color(0xFF6200EE); // 메인 브랜드 컬러 예시
-  static const Color lightTextPrimary = Color(0xFF212121);
-  static const Color lightTextSecondary = Color(0xFF757575);
-  static const Color lightBorder = Color(0xFFE0E0E0);
+  static const lightBg = white;
+
+  static const lightSurface = white;
+
+  static const lightSurfaceVariant = Color(0xFFF5F6F8);
+
+  static const lightTextPrimary = black;
+
+  static const lightTextSecondary = Color(0xFF6B7280);
+
+  static const lightTextHint = Color(0xFF9CA3AF);
 
   // ===== 다크 테마 =====
 
   // 기존 검정 → 네이비 기반으로 변경
 
-  static const Color darkBackground = Color(0xFF121212); // 메인 스크롤 배경
-  static const Color darkSurface = Color(0xFF1E1E1E);    // 카드, 입력창 등 컴포넌트 배경
-  static const Color darkPrimary = Color(0xFFBB86FC);    // 다크모드 대응 브랜드 컬러
-  static const Color darkTextPrimary = Color(0xFFF5F5F5);
-  static const Color darkTextSecondary = Color(0xFF9E9E9E);
-  static const Color darkBorder = Color(0xFF2C2C2C);
+  static const darkBg              = Color(0xFF111318); // 순수 검정 → 부드러운 다크
+  static const darkSurface         = Color(0xFF1A1D24);
+  static const darkSurfaceVariant  = Color(0xFF252830);
+  static const darkTextSecondary   = Color(0xFFB8BCC8); // 기존 0xFFA1A1AA보다 밝게
+  static const darkTextHint        = Color(0xFF8B909E); // 기존 0xFF71717A보다 밝게
 
-  // --- 약관 동의 배경색 (선택 시 연하게 강조되는 색상) ---
-  static const Color termsSelectedLight = Color(0xFFE8F0FE); // 라이트모드용 부드러운 블루
-  static const Color termsSelectedDark = Color(0xFF1F2B3D);  // 다크모드용 은은한 가시성 블루
+  static const darkTextPrimary = white;
+
+  static const darkBackground = darkBg;
 
   // Status
   static const error           = Color(0xFFE53935);
