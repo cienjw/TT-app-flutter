@@ -13,6 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/group_repository.dart';
 import '../domain/chat_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../footprints/data/footprint_repository.dart';
+import '../../footprints/domain/footprint_provider.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final int groupId;
@@ -450,6 +453,49 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     }
   }
 
+  Future<void> _confirmMeeting() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('만남 인증'),
+        content: const Text('지금 이 모임 멤버들과 실제로 만나셨나요?\n현재 위치가 발자취에 기록돼요.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('네, 만났어요')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw '위치 서비스를 켜주세요.';
+      }
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
+        throw '위치 권한이 필요해요.';
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      await FootprintRepository().createFootprint(
+        groupId: widget.groupId,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      );
+      ref.invalidate(footprintsProvider);   // 발자취 탭 갱신
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('만남이 발자취에 기록됐어요! 📍')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('기록 실패: $e')));
+    }
+  }
+
   @override
   void dispose() {
     _socket?.emit('leave_room', widget.groupId);
@@ -475,10 +521,12 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           PopupMenuButton<String>(
             icon: const Icon(CupertinoIcons.ellipsis_vertical),
             onSelected: (v) {
+              if (v == 'met') _confirmMeeting();
               if (v == 'rename') _renameGroup();
               if (v == 'leave') _leaveGroup();
             },
             itemBuilder: (_) => const [
+              PopupMenuItem(value: 'met', child: Text('우리 만났어요')),
               PopupMenuItem(value: 'rename', child: Text('방 이름 변경')),
               PopupMenuItem(value: 'leave', child: Text('채팅방 나가기')),
             ],

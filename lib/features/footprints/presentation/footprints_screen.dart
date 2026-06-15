@@ -206,7 +206,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
 
     for (final f in footprints) {
       final marker = NMarker(
-        id: 'fp_${f.groupId}', // 키가 같으면 덮어씌워지긴 함
+        id: 'fp_${f.groupId}_${f.metAt.millisecondsSinceEpoch}',   // ← 날짜까지 포함
         position: NLatLng(f.latitude, f.longitude),
         caption: NOverlayCaption(text: '${f.attendeeCount}명'),
       );
