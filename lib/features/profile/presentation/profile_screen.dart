@@ -31,8 +31,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('로그아웃',
-                style: TextStyle(color: AppColors.meetoryPink)),
+            child: Text('로그아웃', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
@@ -40,15 +39,18 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirmed != true) return;
 
+    // 소켓 끊고 토큰/온보딩 플래그 전부 삭제
     SocketClient.disconnect();
     await SecureStorage.clearAll();
 
+    // 강제 초기화 추가 ✅
     ref.invalidate(myProfileProvider);
     ref.invalidate(myGroupsProvider);
     ref.invalidate(footprintsProvider);
 
     if (!context.mounted) return;
 
+    // 로그인 화면으로 완전히 초기화 (invalidate 대신 화면 전환으로 처리)
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
@@ -60,41 +62,33 @@ class ProfileScreen extends ConsumerWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('회원 탈퇴'),
-        content: const Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제됩니다.'),
+        content: const Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제되고 되돌릴 수 없어요.'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('탈퇴',
-                style: TextStyle(color: AppColors.meetoryPink)),
+            child: Text('탈퇴', style: TextStyle(color: context.cs.error)),
           ),
         ],
       ),
     );
-
     if (ok != true) return;
-
     try {
       await ProfileRepository().deleteAccount();
       SocketClient.disconnect();
-      await SecureStorage.clearAll();
-
+      await SecureStorage.clearAll();          // ← clear 아니라 clearAll
       ref.invalidate(myProfileProvider);
       ref.invalidate(myGroupsProvider);
       ref.invalidate(footprintsProvider);
-
       if (!context.mounted) return;
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
             (route) => false,
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('탈퇴 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('탈퇴 실패: $e')));
     }
   }
 
@@ -105,62 +99,50 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('프로필'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: profileAsync.when(
         data: (profile) => ListView(
           children: [
             _buildProfileHeader(context, profile),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             const Divider(height: 1),
-
             _MenuTile(
               icon: CupertinoIcons.pencil,
               label: '내 정보 수정',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const EditProfileScreen()),
-              ),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen())),
             ),
-
             _MenuTile(
               icon: CupertinoIcons.heart,
               label: '관심사 재설정',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) =>
-                    const SurveyQuestionsScreen(isEdit: true)),
-              ),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SurveyQuestionsScreen(isEdit: true))),
             ),
-
             _MenuTile(
               icon: CupertinoIcons.bell,
               label: '알림 설정',
               onTap: () {},
             ),
-
             _MenuTile(
-              icon: Icons.block_flipped,
+              icon: Icons.block_flipped,          // (네 현재 아이콘 그대로)
               label: '차단 관리',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => const BlockedUsersScreen()),
+                MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
               ),
             ),
-
+            _MenuTile(
+              icon: CupertinoIcons.question_circle,
+              label: '이용 가이드',
+              onTap: () {},
+            ),
             const Divider(height: 1),
-
             _MenuTile(
               icon: CupertinoIcons.square_arrow_right,
               label: '로그아웃',
               isDestructive: true,
               onTap: () => _logout(context, ref),
             ),
-
             _MenuTile(
               icon: CupertinoIcons.delete,
               label: '회원 탈퇴',
@@ -170,41 +152,41 @@ class ProfileScreen extends ConsumerWidget {
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('오류: $e')),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text('프로필을 불러오지 못했어요: $e',
+                style: AppTextStyles.caption),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildProfileHeader(BuildContext context, UserProfile profile) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 20, 24, 10),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.meetorySkyBlue.withOpacity(0.1),
-            AppColors.meetoryPink.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Row(
         children: [
           ProfileAvatar(imageId: profile.profileImg, radius: 36),
-          const SizedBox(width: 16),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(profile.nickname,
-                    style: AppTextStyles.headline2),
-                if (profile.typeLabel != null)
+                Text(profile.nickname, style: AppTextStyles.headline2),
+                if (profile.typeLabel != null) ...[
+                  const SizedBox(height: 4),
                   Text(profile.typeLabel!,
                       style: AppTextStyles.body.copyWith(
-                        color: AppColors.meetorySkyBlue,
+                        color: context.cs.primary,
+                        fontWeight: FontWeight.w600,
                       )),
-                if (profile.mbti != null)
+                ],
+                if (profile.mbti != null) ...[
+                  const SizedBox(height: 2),
                   Text(profile.mbti!, style: AppTextStyles.caption),
+                ],
               ],
             ),
           ),
@@ -229,18 +211,13 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive
-        ? AppColors.meetoryPink
-        : AppColors.meetoryNavy;
-
+    final color = isDestructive ? context.cs.error : context.cs.onSurface;
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(label,
-          style: TextStyle(color: color)),
+      title: Text(label, style: AppTextStyles.body.copyWith(color: color)),
       trailing: isDestructive
           ? null
-          : Icon(CupertinoIcons.chevron_right,
-          color: Colors.grey.withOpacity(0.5)),
+          : Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
       onTap: onTap,
     );
   }
