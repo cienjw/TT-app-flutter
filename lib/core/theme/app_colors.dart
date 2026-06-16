@@ -15,54 +15,33 @@ class AppColors {
   static const pinkLight = Color(0xFFFF8DA1);
   static const skyBlueLight = Color(0xFFB8DCE8);
 
-  // 기존 호환 이름
-  static const primary = meetorySkyBlue;
-  static const primaryLight = Color(0xFFF2F2F2);
-  static const secondary = meetoryPink;
+  // 기존 호환 이름 (라이트 기준값)
+  static const primary         = meetorySkyBlue;
+  static const primaryLight    = Color(0xFFF2F2F2);
+  static const secondary       = meetoryPink;
+  static const background      = white;
+  static const surface         = white;
+  static const surfaceVariant  = Color(0xFFF2F2F2);
+  static const textPrimary     = black;
+  static const textSecondary   = Color(0xFF6B7280);
+  static const textHint        = Color(0xFF9CA3AF);
 
-  static const background = white;
-  static const surface = white;
-  static const surfaceVariant = Color(0xFFF2F2F2);
+  // 라이트 팔레트
+  static const lightBg             = white;
+  static const lightSurface        = white;
+  static const lightSurfaceVariant = Color(0xFFF2F2F2);
+  static const lightTextPrimary    = black;
+  static const lightTextSecondary  = Color(0xFF6B7280);
+  static const lightTextHint       = Color(0xFF9CA3AF);
 
-  static const textPrimary = black;
-  static const textSecondary = Color(0xFF6B7280);
-  static const textHint = Color(0xFF9CA3AF);
-
-  // ===== 라이트 테마 =====
-
-  static const lightBg = white;
-
-  static const lightSurface = white;
-
-  static const lightSurfaceVariant = Color(0xFFF5F6F8);
-
-  static const lightTextPrimary = black;
-
-  static const lightTextSecondary = Color(0xFF6B7280);
-
-  static const lightTextHint = Color(0xFF9CA3AF);
-
-  // ===== 다크 테마 =====
-
-  // 기존 검정 → 네이비 기반으로 변경
-
-  static const darkBg = Color(0xFF14161B); // 순수 검정 → 부드러운 다크
-  static const darkSurface         = Color(0xFF1A1D24);
-  static const darkSurfaceVariant  = Color(0xFF252830);
-  static const darkTextSecondary   = Color(0xFFB8BCC8); // 기존 0xFFA1A1AA보다 밝게
-  static const darkTextHint        = Color(0xFF8B909E); // 기존 0xFF71717A보다 밝게
-
-  static const darkTextPrimary = Color(0xFFE9EEF5);
-
-  // 다크 accent (강한 핑크 금지)
-  static const darkPrimarySoft = Color(0xFFF2B2A8); // soft coral
-  static const darkPrimarySoft2 = Color(0xFFB8DCE8); // soft sky
-
-  // 약관 highlight용 (핵심)
-  static const termsSelectedDark = Color(0xFFF2B2A8);
-
-  static const darkBackground = darkBg;
-
+  // 다크 팔레트 (#000 기반)
+  static const darkBg              = black;
+  static const darkSurface         = black;
+  static const darkSurfaceVariant  = Color(0xFF1C1C1E);
+  static const darkTextPrimary     = white;
+  static const darkTextSecondary   = Color(0xFFA1A1AA);
+  static const darkTextHint        = Color(0xFF71717A);
+  static const darkBackground      = black; // 기존 이름 호환
 
   // Status
   static const error           = Color(0xFFE53935);

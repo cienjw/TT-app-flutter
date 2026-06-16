@@ -30,19 +30,12 @@ class SecureStorage {
     return await _storage.read(key: 'onboarding_complete') == 'true';
   }
 
-  static const _keyMatchThreshold = 'match_threshold';
-
-  static Future<void> setMatchThreshold(double value) async {
-    await _storage.write(
-      key: _keyMatchThreshold,
-      value: value.toString(),
-    );
-  }
+  static Future<void> setMatchThreshold(double v) =>
+      _storage.write(key: 'match_threshold', value: v.toString());
 
   static Future<double?> getMatchThreshold() async {
-    final v = await _storage.read(key: _keyMatchThreshold);
-    if (v == null) return null;
-    return double.tryParse(v);
+    final s = await _storage.read(key: 'match_threshold');
+    return s == null ? null : double.tryParse(s);
   }
 }
 
