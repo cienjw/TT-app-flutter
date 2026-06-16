@@ -16,6 +16,7 @@ import '../../../shared/widgets/profile_avatar.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../footprints/data/footprint_repository.dart';
 import '../../footprints/domain/footprint_provider.dart';
+import 'package:dio/dio.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final int groupId;
@@ -47,6 +48,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   int? _highlightedId;
   late String _groupName;
   final Set<int> _blockedIds = {};
+  List<String> _icebreakers = [];
+  bool _coachLoading = false;
   final List<GroupMember> _members = [];
   final Map<int, int> _lastRead = {};
 
@@ -94,6 +97,11 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       for (final m in detail.members) {
         _lastRead[m.id] = m.lastReadId;
       }
+    } catch (_) {}
+
+    try {
+      _icebreakers = await ref.read(groupRepoProvider).getIcebreakers(widget.groupId);
+      if (mounted) setState(() {});
     } catch (_) {}
 
     _socket = await SocketClient.connect();
@@ -539,9 +547,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                ? Center(
-                child: Text('첫 메시지를 보내보세요!',
-                    style: AppTextStyles.caption))
+                ? _buildIcebreakers()          // ← "첫 메시지를 보내보세요!" 대신
                 : ScrollablePositionedList.builder(
               itemScrollController: _itemScrollController,
               padding: const EdgeInsets.all(16),
@@ -622,6 +628,14 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         child: Row(
           children: [
+            IconButton(
+              onPressed: _coachLoading ? null : _getCoachTip,
+              tooltip: '대화 조언',
+              icon: _coachLoading
+                  ? const SizedBox(width: 20, height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(CupertinoIcons.lightbulb, color: context.cs.primary),
+            ),
             Expanded(
               child: TextField(
                 controller: _textController,
@@ -729,6 +743,97 @@ class _MessageBubbleState extends State<_MessageBubble> {
         ),
       ),
     );
+  }
+
+  Widget _buildIcebreakers() {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const SizedBox(height: 24),
+        Center(child: Icon(CupertinoIcons.sparkles, color: context.cs.primary, size: 40)),
+        const SizedBox(height: 12),
+        Center(child: Text('이런 얘기로 시작해보세요', style: AppTextStyles.title)),
+        const SizedBox(height: 6),
+        Center(child: Text('공통 관심사로 만든 대화 주제예요', style: AppTextStyles.caption)),
+        const SizedBox(height: 24),
+        if (_icebreakers.isEmpty)
+          Center(child: Text('첫 메시지를 보내보세요!', style: AppTextStyles.caption))
+        else
+          ..._icebreakers.map((q) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GestureDetector(
+              onTap: () {                       // 탭하면 입력창에 채워줌
+                _textController.text = q;
+                _inputFocus.requestFocus();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Icon(CupertinoIcons.chat_bubble_2, color: context.cs.primary, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(q, style: AppTextStyles.body)),
+                  ],
+                ),
+              ),
+            ),
+          )),
+      ],
+    );
+  }
+
+  Future<void> _getCoachTip() async {
+    setState(() => _coachLoading = true);
+    try {
+      final tip = await ref.read(groupRepoProvider).getCoachTip(widget.groupId);
+      if (!mounted) return;
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: context.cs.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (_) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(CupertinoIcons.lightbulb_fill, color: context.cs.primary),
+                  const SizedBox(width: 8),
+                  Text('이렇게 말해보세요', style: AppTextStyles.title),
+                ]),
+                const SizedBox(height: 16),
+                Text(tip, style: AppTextStyles.body.copyWith(height: 1.5)),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('닫기'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      String msg = '조언을 가져오지 못했어요.';
+      if (e is DioException && e.response?.data is Map) {
+        msg = e.response!.data['message']?.toString() ?? msg;   // 429 쿨다운 메시지 등
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _coachLoading = false);
+    }
   }
 
   Widget _buildContent(

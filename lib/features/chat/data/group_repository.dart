@@ -85,6 +85,16 @@ class GroupRepository {
         .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
+
+  Future<List<String>> getIcebreakers(int groupId) async {
+    final res = await ApiClient.dio.get('/api/groups/$groupId/icebreakers');
+    return (res.data['icebreakers'] as List).map((e) => e.toString()).toList();
+  }
+
+  Future<String> getCoachTip(int groupId) async {
+    final res = await ApiClient.dio.post('/api/groups/$groupId/coach');
+    return res.data['tip'] as String? ?? '';
+  }
 }
 
 class GroupMember {
