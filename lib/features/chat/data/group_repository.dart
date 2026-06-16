@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import 'package:dio/dio.dart';
 
 class GroupSummary {
   final int id;
@@ -85,6 +86,22 @@ class GroupRepository {
         .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
+
+  Future<List<String>> getIcebreakers(int groupId) async {
+    final res = await ApiClient.dio.get(
+        '/api/groups/$groupId/icebreakers',
+      options: Options(receiveTimeout: const Duration(seconds: 25)),
+    );
+    return (res.data['icebreakers'] as List).map((e) => e.toString()).toList();
+  }
+
+  Future<String> getCoachTip(int groupId) async {
+    final res = await ApiClient.dio.post(
+      '/api/groups/$groupId/coach',
+      options: Options(receiveTimeout: const Duration(seconds: 25)),  // ← Gemini 느려도 기다림
+    );
+    return res.data['tip'] as String? ?? '';
+  }
 }
 
 class GroupMember {
@@ -114,12 +131,16 @@ class GroupDetail {
   final int id;
   final String name;
   final List<GroupMember> members;
-  GroupDetail({required this.id, required this.name, required this.members});
+  final DateTime? expiresAt;                    // ← 추가
+  GroupDetail({required this.id, required this.name, required this.members, this.expiresAt});
   factory GroupDetail.fromJson(Map<String, dynamic> j) => GroupDetail(
     id: j['id'] as int,
     name: j['name'] as String? ?? '모임',
     members: (j['members'] as List? ?? [])
         .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
+    expiresAt: j['expires_at'] != null
+        ? DateTime.tryParse(j['expires_at'].toString())
+        : null,                                  // ← 추가
   );
 }
