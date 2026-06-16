@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
@@ -44,7 +45,8 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('오류: $e'), backgroundColor: context.cs.error),
+        SnackBar(
+            content: Text('오류: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -53,6 +55,8 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('프로필 설정', style: AppTextStyles.title),
@@ -63,7 +67,7 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height -
@@ -74,78 +78,134 @@ class _NicknameScreenState extends ConsumerState<NicknameScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 40),
-                  Text('어떻게\n불러드릴까요?', style: AppTextStyles.headline1.copyWith(
-                    color: context.cs.primary,
-                  )),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 36),
+
+                  // 헤더
+                  Text(
+                    '어떻게',
+                    style: AppTextStyles.headline1.copyWith(
+                      color: context.cs.onSurface,
+                    ),
+                  ),
+                  Text(
+                    '불러드릴까요?',
+                    style: AppTextStyles.headline1.copyWith(
+                      foreground: Paint()
+                        ..shader = LinearGradient(
+                          colors: [
+                            AppColors.meetorySkyBlue,
+                            AppColors.meetoryPink,
+                          ],
+                        ).createShader(
+                            const Rect.fromLTWH(0, 0, 240, 40)),
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // 닉네임 입력
                   TextField(
                     controller: _controller,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.darkSurfaceVariant
-                          : context.cs.surfaceContainerHighest,
                       hintText: '예) 심야의_코더',
                       prefixIcon: Icon(
                         Icons.alternate_email,
-                        color: context.cs.primary.withOpacity(0.9),
+                        color: context.cs.primary.withOpacity(0.5),
                       ),
                     ),
                     maxLength: 20,
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    padding: const EdgeInsets.only(top: 6, left: 4),
                     child: Text(
                       '나를 잘 표현하는 별명을 추천해요. 안전한 만남을 위해 본명이나 연락처는 피해주세요.',
-                      style: AppTextStyles.caption.copyWith(
-                        height: 1.5,
-                      ),
+                      style: AppTextStyles.caption.copyWith(height: 1.5),
                     ),
                   ),
-                  const SizedBox(height: 48),
-                  Text('프로필 사진 선택', style: AppTextStyles.title.copyWith(
-                    color: context.cs.secondary,
-                  )),
-                  const SizedBox(height: 24),
-              GridView.count(
-                crossAxisCount: 4,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                children: List.generate(ProfileAvatar.presets.length, (i) {
-                        final selected = _selectedAvatar == i;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedAvatar = i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected ? context.cs.secondary : Colors.transparent,
-                                width: 3,
-                              ),
-                              boxShadow: selected ? [
-                                BoxShadow(
-                                  color: context.cs.secondary.withOpacity(0.18),
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
-                                )
-                              ] : null,
-                            ),
-                            child: ProfileAvatar(
-                              imageId: 'avatar_${i + 1}',
-                              radius: 34,
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  const Spacer(),
+
                   const SizedBox(height: 40),
+
+                  // 프로필 사진 섹션 헤더
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.meetorySkyBlue,
+                              AppColors.meetoryPink,
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '프로필 사진 선택',
+                        style: AppTextStyles.title.copyWith(
+                          color: context.cs.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 아바타 그리드: 4 × 2 (두 줄)
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                    const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: ProfileAvatar.presets.length, // 8개 → 4×2
+                    itemBuilder: (context, i) {
+                      final selected = _selectedAvatar == i;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedAvatar = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selected
+                                  ? AppColors.meetorySkyBlue
+                                  : Colors.transparent,
+                              width: 3,
+                            ),
+                            boxShadow: selected
+                                ? [
+                              BoxShadow(
+                                color: AppColors.meetorySkyBlue
+                                    .withOpacity(isDark ? 0.45 : 0.3),
+                                blurRadius: 14,
+                                spreadRadius: 2,
+                              ),
+                            ]
+                                : null,
+                          ),
+                          padding: const EdgeInsets.all(3),
+                          child: ProfileAvatar(
+                            imageId: 'avatar_${i + 1}',
+                            radius: 30,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const Spacer(),
+                  const SizedBox(height: 32),
+
                   AppButton(
                     label: '시작하기',
                     isLoading: _isLoading,
