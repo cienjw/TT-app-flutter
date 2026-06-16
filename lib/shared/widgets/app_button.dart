@@ -27,33 +27,66 @@ class AppButton extends StatelessWidget {
         AppButtonVariant.kakao => ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.kakaoYellow,
-            foregroundColor: Colors.black87,
+            foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: Colors.black87),
+          child: _buildChild(context, Colors.black),
         ),
+
         AppButtonVariant.google => OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.primary),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+              color: context.cs.onSurface.withOpacity(0.15),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: _buildChild(context, context.cs.onSurface),
         ),
+
         AppButtonVariant.outlined => OutlinedButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.primary),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(
+              color: AppColors.meetorySkyBlue.withOpacity(0.45),
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: _buildChild(context, AppColors.meetorySkyBlue),
         ),
+
         AppButtonVariant.filled => FilledButton(
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.onPrimary),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.meetorySkyBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: _buildChild(context, Colors.white),
         ),
       },
     );
   }
 
-  Widget _buildChild(BuildContext context, {Color? color}) => isLoading
-      ? SizedBox(
-      width: 20, height: 20,
-      child: CircularProgressIndicator(strokeWidth: 2, color: color))
-      : Text(label, style: AppTextStyles.button.copyWith(color: color));
+  Widget _buildChild(BuildContext context, Color color) {
+    return isLoading
+        ? SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: color,
+      ),
+    )
+        : Text(label, style: AppTextStyles.button.copyWith(color: color));
+  }
 }

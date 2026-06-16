@@ -20,7 +20,7 @@ class FootprintsScreen extends ConsumerStatefulWidget {
 class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   NaverMapController? _controller;
   double _bearing = 0;
-  double _sheetExtent = 0.24; // 하단 시트의 현재 높이 비율 (initialChildSize와 동일)
+  double _sheetExtent = 0.24;
 
   static const _fallback = NLatLng(36.9921, 127.1129);
 
@@ -34,8 +34,8 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
     });
 
     final screenH = MediaQuery.of(context).size.height;
-    final myLocBottom = screenH * _sheetExtent + 12; // 시트 바로 위
-    final compassBottom = myLocBottom + 52; // 위치 버튼 바로 위
+    final myLocBottom = screenH * _sheetExtent + 16;
+    final compassBottom = myLocBottom + 56;
 
     return Scaffold(
       body: NotificationListener<DraggableScrollableNotification>(
@@ -45,13 +45,14 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
         },
         child: Stack(
           children: [
+            // 지도
             Positioned.fill(
               child: NaverMap(
                 options: NaverMapViewOptions(
                   initialCameraPosition:
                   const NCameraPosition(target: _fallback, zoom: 12),
-                  mapType: isDark ? NMapType.navi : NMapType.basic, // 라이트=basic, 다크=navi
-                  nightModeEnable: isDark,                          // navi일 때만 실제로 먹힘
+                  mapType: isDark ? NMapType.navi : NMapType.basic,
+                  nightModeEnable: isDark,
                   locationButtonEnable: false,
                 ),
                 onMapReady: _onMapReady,
@@ -60,25 +61,57 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
               ),
             ),
 
-            // 상단 안내 칩
+            // 상단 안내 칩 (블러 글래스모피즘)
             SafeArea(
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Container(
-                  margin: const EdgeInsets.all(12),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  margin: const EdgeInsets.only(top: 12, left: 20, right: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
                   decoration: BoxDecoration(
-                    color: context.cs.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                    color: isDark
+                        ? const Color(0xFF1C1C1E).withOpacity(0.88)
+                        : Colors.white.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.07)
+                          : Colors.black.withOpacity(0.06),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Text('같은 관심사를 가진 사람들이 다녀간 곳이에요',
-                      style: AppTextStyles.caption),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        CupertinoIcons.sparkles,
+                        size: 14,
+                        color: AppColors.meetorySkyBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '같은 관심사를 가진 사람들이 다녀간 곳이에요',
+                        style: AppTextStyles.caption.copyWith(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.85)
+                              : Colors.black.withOpacity(0.7),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            // 나침반: 회전 시에만 표시, 위치 버튼 바로 위
+            // 나침반
             if (_bearing.abs() > 0.5)
               Positioned(
                 right: 16,
@@ -93,44 +126,32 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
                     );
                     setState(() => _bearing = 0);
                   },
-                  // 나침반 컨테이너 (const Icon → Icon)
-                  child: Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      color: context.cs.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                    ),
+                  child: _MapButton(
+                    isDark: isDark,
                     child: Transform.rotate(
                       angle: -_bearing * math.pi / 180,
                       child: Icon(CupertinoIcons.location_north_fill,
-                          color: context.cs.primary, size: 24),
+                          color: AppColors.meetoryPink, size: 20),
                     ),
                   ),
                 ),
               ),
 
-            // 내 위치 버튼: 시트 바로 위에 붙어 따라다님
-            // 내 위치 버튼: 나침반과 동일한 원형 디자인
+            // 내 위치 버튼
             Positioned(
               right: 16,
               bottom: myLocBottom,
               child: GestureDetector(
                 onTap: _goToMyLocation,
-                // 내 위치 버튼 (const Icon → Icon)
-                child: Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color: context.cs.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-                  ),
-                  child: Icon(Icons.my_location, color: context.cs.primary, size: 22),
+                child: _MapButton(
+                  isDark: isDark,
+                  child: Icon(CupertinoIcons.location_fill,
+                      color: AppColors.meetorySkyBlue, size: 20),
                 ),
               ),
             ),
 
-            _buildBottomSheet(footprintsAsync),
+            _buildBottomSheet(footprintsAsync, isDark),
           ],
         ),
       ),
@@ -157,8 +178,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
           perm == LocationPermission.deniedForever) return;
 
       final lo = await controller.getLocationOverlay();
-
-      // ① 캐시된 위치로 즉시 이동 + 파란점 먼저 표시
       final last = await Geolocator.getLastKnownPosition();
       if (last != null) {
         final lastLatLng = NLatLng(last.latitude, last.longitude);
@@ -166,8 +185,6 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
         lo.setPosition(lastLatLng);
         lo.setIsVisible(true);
       }
-
-      // ② 정확한 위치로 보정 (실패해도 위 파란점은 유지됨)
       try {
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
@@ -177,7 +194,7 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
         _moveCameraTo(controller, myLatLng);
         lo.setPosition(myLatLng);
         lo.setIsVisible(true);
-      } catch (_) {/* 캐시 위치로 이미 파란점 표시됨 */}
+      } catch (_) {}
     } catch (_) {}
   }
 
@@ -201,12 +218,10 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   Future<void> _syncMarkers(List<Footprint> footprints) async {
     final controller = _controller;
     if (controller == null) return;
-    // _markersSynced 플래그 검사 제거, 대신 기존 마커 클리어 ✅
     controller.clearOverlays(type: NOverlayType.marker);
-
     for (final f in footprints) {
       final marker = NMarker(
-        id: 'fp_${f.groupId}', // 키가 같으면 덮어씌워지긴 함
+        id: 'fp_${f.groupId}_${f.metAt.millisecondsSinceEpoch}',
         position: NLatLng(f.latitude, f.longitude),
         caption: NOverlayCaption(text: '${f.attendeeCount}명'),
       );
@@ -230,16 +245,15 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   void _showDetail(Footprint f) {
     showModalBottomSheet(
       context: context,
-      // _showDetail
       backgroundColor: context.cs.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (_) => _FootprintDetailSheet(footprint: f),
     );
   }
 
-  Widget _buildBottomSheet(AsyncValue<List<Footprint>> async) {
+  Widget _buildBottomSheet(AsyncValue<List<Footprint>> async, bool isDark) {
     return DraggableScrollableSheet(
       initialChildSize: 0.24,
       minChildSize: 0.12,
@@ -247,49 +261,105 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            color: context.cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
+            color: isDark
+                ? const Color(0xFF111111)
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.12),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
           child: async.when(
             data: (footprints) => ListView(
               controller: scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
+                // 드래그 핸들
                 Center(
                   child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    width: 40, height: 4,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    width: 36,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest,
+                      color: context.cs.onSurface.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 8),
-                  child: Text('최근 만남', style: AppTextStyles.title),
+                // 헤더
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppColors.meetorySkyBlue,
+                            AppColors.meetoryPink,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text('최근 만남', style: AppTextStyles.title),
+                    const Spacer(),
+                    if (footprints.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.meetorySkyBlue.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${footprints.length}건',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.meetorySkyBlue,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 14),
                 if (footprints.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Center(
-                      child: Text('아직 기록된 만남이 없어요',
-                          style: AppTextStyles.caption),
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Column(
+                      children: [
+                        Icon(CupertinoIcons.map_fill,
+                            size: 40,
+                            color:
+                            context.cs.onSurface.withOpacity(0.2)),
+                        const SizedBox(height: 12),
+                        Text('아직 기록된 만남이 없어요',
+                            style: AppTextStyles.caption),
+                      ],
                     ),
                   )
                 else
                   ...footprints.map((f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: _FootprintCard(
                       footprint: f,
+                      isDark: isDark,
                       onTap: () => _moveTo(f),
                     ),
                   )),
                 const SizedBox(height: 20),
               ],
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () =>
+            const Center(child: CircularProgressIndicator()),
             error: (e, _) => Padding(
               padding: const EdgeInsets.all(20),
               child: Text('발자취를 불러오지 못했어요: $e',
@@ -302,10 +372,46 @@ class _FootprintsScreenState extends ConsumerState<FootprintsScreen> {
   }
 }
 
+// 지도 위 둥근 버튼 공통 위젯
+class _MapButton extends StatelessWidget {
+  final Widget child;
+  final bool isDark;
+  const _MapButton({required this.child, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1C1C1E).withOpacity(0.92)
+            : Colors.white.withOpacity(0.95),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : Colors.black.withOpacity(0.06),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(child: child),
+    );
+  }
+}
+
 class _FootprintCard extends StatelessWidget {
   final Footprint footprint;
+  final bool isDark;
   final VoidCallback onTap;
-  const _FootprintCard({required this.footprint, required this.onTap});
+  const _FootprintCard(
+      {required this.footprint, required this.isDark, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -313,24 +419,41 @@ class _FootprintCard extends StatelessWidget {
     final title = footprint.interests.isEmpty
         ? footprint.groupName
         : footprint.interests.join(' · ');
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: context.cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(14),
+          color: isDark
+              ? const Color(0xFF1C1C1E)
+              : const Color(0xFFF5F5F7),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : Colors.transparent,
+          ),
         ),
         child: Row(
           children: [
+            // 아이콘 원
             Container(
-              width: 44, height: 44,
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                  color: context.cs.surface, shape: BoxShape.circle),
-              child: Icon(CupertinoIcons.placemark_fill,
-                  color: context.cs.onSurfaceVariant),
+                gradient: const LinearGradient(
+                  colors: [
+                    AppColors.meetorySkyBlue,
+                    AppColors.meetoryPink,
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(CupertinoIcons.placemark_fill,
+                  color: Colors.white, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,14 +461,21 @@ class _FootprintCard extends StatelessWidget {
                   Text(title,
                       style: AppTextStyles.body
                           .copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Text('$dateStr · ${footprint.attendeeCount}명이 만났어요',
-                      style: AppTextStyles.caption),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 3),
+                  Text(
+                    '$dateStr · ${footprint.attendeeCount}명이 만났어요',
+                    style: AppTextStyles.caption.copyWith(fontSize: 12),
+                  ),
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 16,
+              color: context.cs.onSurface.withOpacity(0.3),
+            ),
           ],
         ),
       ),
@@ -360,6 +490,8 @@ class _FootprintDetailSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('yyyy년 M월 d일').format(footprint.metAt);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
@@ -369,56 +501,97 @@ class _FootprintDetailSheet extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 40,
+                width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: context.cs.surfaceContainerHighest,
+                  color: context.cs.onSurface.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Container(
-                  width: 48, height: 48,
-                  decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest, shape: BoxShape.circle),
-                  child: Icon(CupertinoIcons.person_3_fill,
-                      color: context.cs.onSurfaceVariant),
+            const SizedBox(height: 24),
+
+            // 헤더
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.meetorySkyBlue.withOpacity(isDark ? 0.15 : 0.1),
+                    AppColors.meetoryPink.withOpacity(isDark ? 0.1 : 0.07),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${footprint.attendeeCount}명이 모인 만남',
-                          style: AppTextStyles.title),
-                      Text(dateStr, style: AppTextStyles.caption),
-                    ],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.meetorySkyBlue.withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.meetorySkyBlue,
+                          AppColors.meetoryPink,
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(CupertinoIcons.person_3_fill,
+                        color: Colors.white, size: 22),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${footprint.attendeeCount}명이 모인 만남',
+                            style: AppTextStyles.title),
+                        const SizedBox(height: 2),
+                        Text(dateStr, style: AppTextStyles.caption),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+
             const SizedBox(height: 20),
-            Text('이런 관심사를 가진 사람들이에요', style: AppTextStyles.caption),
+            Text('공통 관심사',
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: context.cs.onSurface.withOpacity(0.5),
+                )),
             const SizedBox(height: 10),
             if (footprint.interests.isEmpty)
-              Text('관심사 정보가 없어요', style: AppTextStyles.body)
+              Text('관심사 정보가 없어요', style: AppTextStyles.caption)
             else
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: footprint.interests.map((name) {
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: context.cs.surfaceContainerHighest,
+                      color: AppColors.meetorySkyBlue.withOpacity(
+                          isDark ? 0.15 : 0.1),
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.meetorySkyBlue.withOpacity(0.3),
+                      ),
                     ),
                     child: Text(name,
                         style: AppTextStyles.body.copyWith(
-                            color: context.cs.onSurface, fontWeight: FontWeight.w600)),
+                          color: isDark
+                              ? AppColors.meetorySkyBlue
+                              : AppColors.meetoryNavy,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        )),
                   );
                 }).toList(),
               ),

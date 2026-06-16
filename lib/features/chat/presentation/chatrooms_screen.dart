@@ -7,6 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../domain/chat_provider.dart';
 import '../data/group_repository.dart';
 import 'chat_room_screen.dart';
+import '../../../core/storage/secure_storage.dart';
 
 class ChatroomsScreen extends ConsumerStatefulWidget {
   const ChatroomsScreen({super.key});
@@ -17,8 +18,8 @@ class ChatroomsScreen extends ConsumerStatefulWidget {
 
 class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   bool _bluetoothOn = false;
-  bool _isMatching = false; // enqueue 요청 중
-  bool _isWaiting = false;  // 대기열에 올라가 있음
+  bool _isMatching = false;
+  bool _isWaiting = false;
   double _matchThreshold = 0.85;
   Timer? _pollTimer;
   bool _isSearching = false;
@@ -28,13 +29,19 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   void initState() {
     super.initState();
-    _checkMatchingStatus(); // 화면 진입 시 이미 대기 중인지 복원
+    _loadThreshold();
+    _checkMatchingStatus();
+  }
+
+  Future<void> _loadThreshold() async {
+    final saved = await SecureStorage.getMatchThreshold();
+    if (saved != null && mounted) setState(() => _matchThreshold = saved);
   }
 
   @override
   void dispose() {
     _pollTimer?.cancel();
-    _searchCtrl.dispose();   // ← 여기로 이동
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -46,14 +53,14 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         setState(() => _isWaiting = true);
         _startPolling();
       }
-    } catch (_) {/* 무시 */}
+    } catch (_) {}
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
       if (!mounted) return;
-      ref.invalidate(myGroupsProvider); // 새 방 생기면 목록에 반영
+      ref.invalidate(myGroupsProvider);
       try {
         final status = await ref.read(groupRepoProvider).getMatchingStatus();
         if (!mounted) return;
@@ -63,7 +70,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
             const SnackBar(content: Text('매칭 완료! 새 모임이 열렸어요.')),
           );
         }
-      } catch (_) {/* 무시 */}
+      } catch (_) {}
     });
   }
 
@@ -76,7 +83,10 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   Future<void> _runMatching() async {
     setState(() => _isMatching = true);
     try {
-      await ref.read(groupRepoProvider).joinMatching(threshold: _matchThreshold);
+      await SecureStorage.setMatchThreshold(_matchThreshold);
+      await ref
+          .read(groupRepoProvider)
+          .joinMatching(threshold: _matchThreshold);
       if (!mounted) return;
       setState(() => _isWaiting = true);
       _startPolling();
@@ -86,7 +96,8 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
+        SnackBar(
+            content: Text('매칭 실패: $e'), backgroundColor: context.cs.error),
       );
     } finally {
       if (mounted) setState(() => _isMatching = false);
@@ -94,11 +105,11 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   }
 
   Future<void> _cancelMatching() async {
-    _pollTimer?.cancel(); // 취소를 매칭완료로 오인하지 않게 먼저 멈춤
+    _pollTimer?.cancel();
     _pollTimer = null;
     try {
       await ref.read(groupRepoProvider).cancelMatching();
-    } catch (_) {/* 무시 */}
+    } catch (_) {}
     if (!mounted) return;
     setState(() => _isWaiting = false);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -109,6 +120,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   Widget build(BuildContext context) {
     final groupsAsync = ref.watch(myGroupsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -126,10 +138,15 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           ),
           onChanged: (v) => setState(() => _searchQuery = v),
         )
-            : const Text('채팅방'),
+            : Text('채팅방', style: AppTextStyles.title),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? CupertinoIcons.xmark : CupertinoIcons.search),
+            icon: Icon(
+              _isSearching
+                  ? CupertinoIcons.xmark
+                  : CupertinoIcons.search,
+              size: 22,
+            ),
             onPressed: () {
               setState(() {
                 if (_isSearching) {
@@ -150,8 +167,47 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           children: [
             if (!_isSearching) ...[
-              _buildMatchingCard(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
+              _buildMatchingCard(isDark),
+              const SizedBox(height: 28),
+              // 채팅방 섹션 헤더
+              groupsAsync.when(
+                data: (groups) {
+                  if (groups.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Text('참여 중인 채팅방',
+                            style: AppTextStyles.body.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: context.cs.onSurface.withOpacity(0.6),
+                              fontSize: 13,
+                            )),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.meetoryPink.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${groups.length}개',
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.meetoryPink,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
             ],
             groupsAsync.when(
               data: (groups) {
@@ -171,7 +227,9 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
                   );
                 }
                 return Column(
-                    children: filtered.map((g) => _buildRoomCard(g)).toList());
+                    children: filtered
+                        .map((g) => _buildRoomCard(g, isDark))
+                        .toList());
               },
               loading: () => const Padding(
                 padding: EdgeInsets.all(40),
@@ -179,111 +237,269 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(20),
-                child: Text('목록을 불러오지 못했어요: $e', style: AppTextStyles.caption),
+                child: Text('목록을 불러오지 못했어요: $e',
+                    style: AppTextStyles.caption),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMatchingCard() {
-    if (_isWaiting) return _buildWaitingCard();
+  Widget _buildMatchingCard(bool isDark) {
+    if (_isWaiting) return _buildWaitingCard(isDark);
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: context.cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+            const Color(0xFF1A2035),
+            const Color(0xFF1C1C1E),
+          ]
+              : [
+            AppColors.meetoryNavy.withOpacity(0.06),
+            AppColors.meetorySkyBlue.withOpacity(0.08),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark
+              ? AppColors.meetorySkyBlue.withOpacity(0.15)
+              : AppColors.meetoryNavy.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('채팅방 매칭', style: AppTextStyles.title),
-          const SizedBox(height: 4),
-          Text('마음에 맞는 친구들을 찾아볼까요?', style: AppTextStyles.caption),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: context.cs.surface,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          // 카드 헤더
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
-                Icon(Icons.bluetooth,
-                    size: 22,
-                    color: _bluetoothOn
-                        ? context.cs.primary
-                        : context.cs.onSurfaceVariant),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('주변 탐색',
-                          style: AppTextStyles.body
-                              .copyWith(fontWeight: FontWeight.w600)),
-                      Text('가까이 있는 사람을 우선 찾아요',
-                          style: AppTextStyles.caption),
-                    ],
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppColors.meetorySkyBlue,
+                        AppColors.meetoryNavy,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: const Icon(CupertinoIcons.sparkles,
+                      color: Colors.white, size: 18),
                 ),
-                Switch(
-                  value: _bluetoothOn,
-                  activeColor: context.cs.primary,
-                  onChanged: (v) => setState(() => _bluetoothOn = v),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AI 매칭',
+                        style: AppTextStyles.title.copyWith(fontSize: 16)),
+                    Text('마음 맞는 친구들을 찾아볼까요?',
+                        style: AppTextStyles.caption.copyWith(fontSize: 12)),
+                  ],
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 18),
-          Row(
-            children: [
-              Text('관심사 일치도',
-                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600)),
-              const Spacer(),
-              Text('${(_matchThreshold * 100).round()}% 이상',
-                  style: AppTextStyles.body.copyWith(
-                      color: context.cs.primary, fontWeight: FontWeight.w700)),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+                height: 1,
+                color: context.cs.onSurface.withOpacity(0.08)),
           ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4,
-              activeTrackColor: context.cs.primary,
-              inactiveTrackColor: context.cs.surface,
-              thumbColor: context.cs.primary,
-              overlayColor: context.cs.primary.withOpacity(0.15),
+          const SizedBox(height: 18),
+
+          // 주변 탐색 토글
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: _bluetoothOn
+                          ? AppColors.meetorySkyBlue.withOpacity(0.15)
+                          : context.cs.onSurface.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      CupertinoIcons.bluetooth,
+                      size: 18,
+                      color: _bluetoothOn
+                          ? AppColors.meetorySkyBlue
+                          : context.cs.onSurface.withOpacity(0.35),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('주변 탐색',
+                            style: AppTextStyles.body.copyWith(
+                                fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text('가까이 있는 사람을 우선 찾아요',
+                            style:
+                            AppTextStyles.caption.copyWith(fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.85,
+                    child: Switch.adaptive(
+                      value: _bluetoothOn,
+                      activeColor: AppColors.meetorySkyBlue,
+                      onChanged: (v) => setState(() => _bluetoothOn = v),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Slider(
-              value: _matchThreshold,
-              min: 0.5,
-              max: 1.0,
-              divisions: 10,
-              onChanged: (v) => setState(() => _matchThreshold = v),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 관심사 일치도 슬라이더
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('관심사 일치도',
+                        style: AppTextStyles.body
+                            .copyWith(fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppColors.meetorySkyBlue,
+                            AppColors.meetoryNavy,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${(_matchThreshold * 100).round()}% 이상',
+                        style: AppTextStyles.caption.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 4,
+                    activeTrackColor: AppColors.meetorySkyBlue,
+                    inactiveTrackColor:
+                    context.cs.onSurface.withOpacity(0.1),
+                    thumbColor: Colors.white,
+                    thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 8),
+                    overlayColor:
+                    AppColors.meetorySkyBlue.withOpacity(0.15),
+                    overlayShape:
+                    const RoundSliderOverlayShape(overlayRadius: 18),
+                  ),
+                  child: Slider(
+                    value: _matchThreshold,
+                    min: 0.5,
+                    max: 1.0,
+                    divisions: 10,
+                    onChanged: (v) => setState(() => _matchThreshold = v),
+                  ),
+                ),
+                Text(
+                  _matchThreshold >= 0.99
+                      ? '나와 완벽히 일치하는 사람만 기다려요'
+                      : '관심사가 ${(_matchThreshold * 100).round()}% 이상 맞는 사람과 연결돼요',
+                  style: AppTextStyles.caption.copyWith(fontSize: 12),
+                ),
+              ],
             ),
           ),
-          Text(
-            _matchThreshold >= 0.99
-                ? '나와 완벽히 일치하는 사람만 기다려요'
-                : '관심사가 ${(_matchThreshold * 100).round()}% 이상 맞는 사람과 연결돼요',
-            style: AppTextStyles.caption,
-          ),
+
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: FilledButton(
-              onPressed: _isMatching ? null : _runMatching,
-              child: _isMatching
-                  ? SizedBox(
-                  width: 18, height: 18,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: context.cs.onPrimary))
-                  : const Text('매칭하기'),
+
+          // 매칭 버튼
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  padding: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ).copyWith(
+                  backgroundColor:
+                  WidgetStateProperty.all(Colors.transparent),
+                ),
+                onPressed: _isMatching ? null : _runMatching,
+                child: Ink(
+                  decoration: BoxDecoration(
+                    gradient: _isMatching
+                        ? null
+                        : const LinearGradient(
+                      colors: [
+                        AppColors.meetoryNavy,
+                        AppColors.meetorySkyBlue,
+                      ],
+                    ),
+                    color: _isMatching
+                        ? context.cs.onSurface.withOpacity(0.12)
+                        : null,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Container(
+                    alignment: Alignment.center,
+                    child: _isMatching
+                        ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: context.cs.onSurface))
+                        : Text(
+                      '매칭 시작하기',
+                      style: AppTextStyles.button.copyWith(
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -291,32 +507,68 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildWaitingCard() {
+  Widget _buildWaitingCard(bool isDark) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: context.cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+            AppColors.meetorySkyBlue.withOpacity(0.12),
+            AppColors.meetoryNavy.withOpacity(0.2),
+          ]
+              : [
+            AppColors.meetorySkyBlue.withOpacity(0.08),
+            AppColors.meetoryNavy.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppColors.meetorySkyBlue.withOpacity(0.25),
+        ),
       ),
       child: Column(
         children: [
+          // 애니메이션 점
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.meetorySkyBlue.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(CupertinoIcons.sparkles,
+                    size: 18, color: AppColors.meetorySkyBlue),
+              ),
+              const SizedBox(width: 10),
               Text('맞는 친구를 찾는 중', style: AppTextStyles.title),
               const SizedBox(width: 10),
-              _PulsingDots(color: context.cs.primary),
+              _PulsingDots(color: AppColors.meetorySkyBlue),
             ],
           ),
           const SizedBox(height: 8),
-          Text('조건에 맞는 사람이 모이면 자동으로 모임이 열려요',
-              textAlign: TextAlign.center, style: AppTextStyles.caption),
+          Text(
+            '조건에 맞는 사람이 모이면 자동으로 모임이 열려요',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption,
+          ),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            height: 48,
+            height: 46,
             child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.meetorySkyBlue,
+                side: BorderSide(
+                    color: AppColors.meetorySkyBlue.withOpacity(0.5)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: _cancelMatching,
               child: const Text('매칭 취소'),
             ),
@@ -326,7 +578,17 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
     );
   }
 
-  Widget _buildRoomCard(GroupSummary group) {
+  Widget _buildRoomCard(GroupSummary group, bool isDark) {
+    // 그룹 이름 첫 글자로 아바타 색상 결정
+    final colors = [
+      AppColors.meetorySkyBlue,
+      AppColors.meetoryPink,
+      AppColors.meetoryNavy,
+      const Color(0xFF80CBC4),
+      const Color(0xFFB39DDB),
+    ];
+    final colorIdx = group.name.codeUnitAt(0) % colors.length;
+
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
@@ -339,36 +601,98 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: context.cs.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.cs.surfaceContainerHighest),
+          color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.06)
+                : Colors.black.withOpacity(0.06),
+          ),
+          boxShadow: isDark
+              ? null
+              : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 26,
-              backgroundColor: context.cs.surfaceContainerHighest,
-              child: Icon(CupertinoIcons.person_3_fill,
-                  color: context.cs.onSurfaceVariant),
+            // 그룹 아바타
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: colors[colorIdx].withOpacity(isDark ? 0.2 : 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  group.name.isNotEmpty
+                      ? group.name.substring(0, 1)
+                      : '?',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: colors[colorIdx],
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${group.name} (${group.memberCount}명)',
-                      style: AppTextStyles.title),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          group.name,
+                          style: AppTextStyles.body
+                              .copyWith(fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: context.cs.onSurface.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${group.memberCount}명',
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 4),
-                  Text(group.lastMessage ?? '아직 대화가 없어요',
-                      style: AppTextStyles.caption,
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    group.lastMessage ?? '아직 대화가 없어요',
+                    style: AppTextStyles.caption.copyWith(fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            Icon(CupertinoIcons.chevron_right, color: context.cs.onSurfaceVariant),
+            const SizedBox(width: 8),
+            Icon(
+              CupertinoIcons.chevron_right,
+              size: 14,
+              color: context.cs.onSurface.withOpacity(0.25),
+            ),
           ],
         ),
       ),
@@ -377,10 +701,27 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
 
   Widget _emptyState() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Text('아직 참여한 채팅방이 없어요.\n매칭하기를 눌러 시작해보세요!',
-            textAlign: TextAlign.center, style: AppTextStyles.caption),
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Column(
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.meetorySkyBlue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(CupertinoIcons.chat_bubble_2,
+                size: 32, color: AppColors.meetorySkyBlue),
+          ),
+          const SizedBox(height: 16),
+          Text('아직 참여한 채팅방이 없어요',
+              style: AppTextStyles.body
+                  .copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text('위 매칭 카드로 새 모임을 시작해보세요!',
+              style: AppTextStyles.caption),
+        ],
       ),
     );
   }
@@ -425,7 +766,8 @@ class _PulsingDotsState extends State<_PulsingDots>
             final pulse = (1 - (t - 0.5).abs() * 2).clamp(0.0, 1.0);
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: 7, height: 7,
+              width: 7,
+              height: 7,
               decoration: BoxDecoration(
                 color: widget.color.withOpacity(0.3 + 0.7 * pulse),
                 shape: BoxShape.circle,
