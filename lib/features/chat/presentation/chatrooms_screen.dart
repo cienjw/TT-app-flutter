@@ -7,6 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../domain/chat_provider.dart';
 import '../data/group_repository.dart';
 import 'chat_room_screen.dart';
+import '../../../core/storage/secure_storage.dart';
 
 class ChatroomsScreen extends ConsumerStatefulWidget {
   const ChatroomsScreen({super.key});
@@ -28,7 +29,15 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   @override
   void initState() {
     super.initState();
-    _checkMatchingStatus(); // 화면 진입 시 이미 대기 중인지 복원
+    _loadThreshold();
+    _checkMatchingStatus();
+  }
+
+  Future<void> _loadThreshold() async {
+    final saved = await SecureStorage.getMatchThreshold();
+    if (saved != null && mounted) {
+      setState(() => _matchThreshold = saved);
+    }
   }
 
   @override
@@ -76,6 +85,7 @@ class _ChatroomsScreenState extends ConsumerState<ChatroomsScreen> {
   Future<void> _runMatching() async {
     setState(() => _isMatching = true);
     try {
+      await SecureStorage.setMatchThreshold(_matchThreshold);
       await ref.read(groupRepoProvider).joinMatching(threshold: _matchThreshold);
       if (!mounted) return;
       setState(() => _isWaiting = true);

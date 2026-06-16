@@ -29,5 +29,13 @@ class SecureStorage {
   static Future<bool> isOnboardingComplete() async {
     return await _storage.read(key: 'onboarding_complete') == 'true';
   }
+
+  static Future<void> setMatchThreshold(double v) =>
+      _storage.write(key: 'match_threshold', value: v.toString());
+
+  static Future<double?> getMatchThreshold() async {
+    final s = await _storage.read(key: 'match_threshold');
+    return s == null ? null : double.tryParse(s);
+  }
 }
 
