@@ -52,6 +52,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   bool _coachLoading = false;
   final List<GroupMember> _members = [];
   final Map<int, int> _lastRead = {};
+  DateTime? _expiresAt;
 
   static const _reactionEmojis = ['❤️', '👍', '😂', '😮', '😢'];
 
@@ -94,6 +95,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     try {
       final detail = await ref.read(groupRepoProvider).getGroupDetail(widget.groupId);
       _members..clear()..addAll(detail.members);
+      _expiresAt = detail.expiresAt;
       for (final m in detail.members) {
         _lastRead[m.id] = m.lastReadId;
       }
@@ -163,6 +165,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     _scrollToBottom();
     _markReadLatest();
   }
+
   void _onReactionUpdated(dynamic data) {
     final map = Map<String, dynamic>.from(data);
     final messageId = (map['messageId'] as num).toInt();
@@ -543,6 +546,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
       body: Column(
         children: [
+          _buildExpiryBanner(),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -660,90 +664,6 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       ),
     );
   }
-}
-
-class _MessageBubble extends StatefulWidget {
-  final Message message;
-  final bool isMine;
-  final int? myUserId;
-  final bool highlight;
-  final VoidCallback onLongPress;
-  final void Function(String reaction) onReactionTap;
-  final VoidCallback onReply;
-  final VoidCallback? onReplyTap;
-  final int unreadCount;
-
-  const _MessageBubble({
-    super.key,
-    required this.message,
-    required this.isMine,
-    required this.myUserId,
-    required this.highlight,
-    required this.onLongPress,
-    required this.onReactionTap,
-    required this.onReply,
-    required this.unreadCount,
-    this.onReplyTap,
-  });
-
-  @override
-  State<_MessageBubble> createState() => _MessageBubbleState();
-}
-
-class _MessageBubbleState extends State<_MessageBubble> {
-  double _dragExtent = 0;
-  static const double _maxDrag = 70;
-  static const double _triggerDrag = 50;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.cs;
-    final message = widget.message;
-
-    return GestureDetector(
-      onHorizontalDragUpdate: (d) {
-        setState(() {
-          _dragExtent = (_dragExtent + d.delta.dx).clamp(-_maxDrag, 0.0);
-        });
-      },
-      onHorizontalDragEnd: (_) {
-        if (_dragExtent.abs() >= _triggerDrag) {
-          widget.onReply();
-        }
-        setState(() => _dragExtent = 0);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          color: widget.highlight
-              ? cs.primary.withOpacity(0.12)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: Opacity(
-                    opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
-                    child: Icon(CupertinoIcons.reply,
-                        color: cs.primary, size: 22),
-                  ),
-                ),
-              ),
-            ),
-            Transform.translate(
-              offset: Offset(_dragExtent, 0),
-              child: _buildContent(context, message, widget.isMine, widget.myUserId),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildIcebreakers() {
     return ListView(
@@ -834,6 +754,118 @@ class _MessageBubbleState extends State<_MessageBubble> {
     } finally {
       if (mounted) setState(() => _coachLoading = false);
     }
+  }
+
+  Widget _buildExpiryBanner() {
+    if (_expiresAt == null) return const SizedBox.shrink();
+    final diff = _expiresAt!.difference(DateTime.now());
+    if (diff.isNegative) {
+      return Container(
+        width: double.infinity,
+        color: context.cs.errorContainer,
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+        child: Text('종료된 모임이에요',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption.copyWith(color: context.cs.onErrorContainer)),
+      );
+    }
+    final label = diff.inDays > 0
+        ? '${diff.inDays}일'
+        : diff.inHours > 0
+        ? '${diff.inHours}시간'
+        : '${diff.inMinutes}분';
+    return Container(
+      width: double.infinity,
+      color: context.cs.surfaceContainerHighest,
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      child: Text('이 모임은 $label 후 종료돼요',
+          textAlign: TextAlign.center,
+          style: AppTextStyles.caption.copyWith(color: context.cs.onSurfaceVariant)),
+    );
+  }
+}
+
+class _MessageBubble extends StatefulWidget {
+  final Message message;
+  final bool isMine;
+  final int? myUserId;
+  final bool highlight;
+  final VoidCallback onLongPress;
+  final void Function(String reaction) onReactionTap;
+  final VoidCallback onReply;
+  final VoidCallback? onReplyTap;
+  final int unreadCount;
+
+  const _MessageBubble({
+    super.key,
+    required this.message,
+    required this.isMine,
+    required this.myUserId,
+    required this.highlight,
+    required this.onLongPress,
+    required this.onReactionTap,
+    required this.onReply,
+    required this.unreadCount,
+    this.onReplyTap,
+  });
+
+  @override
+  State<_MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<_MessageBubble> {
+  double _dragExtent = 0;
+  static const double _maxDrag = 70;
+  static const double _triggerDrag = 50;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.cs;
+    final message = widget.message;
+
+    return GestureDetector(
+      onHorizontalDragUpdate: (d) {
+        setState(() {
+          _dragExtent = (_dragExtent + d.delta.dx).clamp(-_maxDrag, 0.0);
+        });
+      },
+      onHorizontalDragEnd: (_) {
+        if (_dragExtent.abs() >= _triggerDrag) {
+          widget.onReply();
+        }
+        setState(() => _dragExtent = 0);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: widget.highlight
+              ? cs.primary.withOpacity(0.12)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 20),
+                  child: Opacity(
+                    opacity: (_dragExtent.abs() / _triggerDrag).clamp(0.0, 1.0),
+                    child: Icon(CupertinoIcons.reply,
+                        color: cs.primary, size: 22),
+                  ),
+                ),
+              ),
+            ),
+            Transform.translate(
+              offset: Offset(_dragExtent, 0),
+              child: _buildContent(context, message, widget.isMine, widget.myUserId),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildContent(

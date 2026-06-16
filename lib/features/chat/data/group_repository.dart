@@ -124,12 +124,16 @@ class GroupDetail {
   final int id;
   final String name;
   final List<GroupMember> members;
-  GroupDetail({required this.id, required this.name, required this.members});
+  final DateTime? expiresAt;                    // ← 추가
+  GroupDetail({required this.id, required this.name, required this.members, this.expiresAt});
   factory GroupDetail.fromJson(Map<String, dynamic> j) => GroupDetail(
     id: j['id'] as int,
     name: j['name'] as String? ?? '모임',
     members: (j['members'] as List? ?? [])
         .map((e) => GroupMember.fromJson(Map<String, dynamic>.from(e)))
         .toList(),
+    expiresAt: j['expires_at'] != null
+        ? DateTime.tryParse(j['expires_at'].toString())
+        : null,                                  // ← 추가
   );
 }
