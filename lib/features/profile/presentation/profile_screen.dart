@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../../core/network/socket_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-
 import '../../auth/presentation/login_screen.dart';
 import '../data/profile_repository.dart';
 import '../domain/profile_provider.dart';
 import '../../chat/domain/chat_provider.dart';
 import '../../footprints/domain/footprint_provider.dart';
 import '../../../shared/widgets/profile_avatar.dart';
-
 import 'blocked_users_screen.dart';
 import 'edit_profile_screen.dart';
 import '../../auth/presentation/survey_questions_screen.dart';
@@ -34,10 +31,8 @@ class ProfileScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              '로그아웃',
-              style: TextStyle(color: AppColors.meetoryPink),
-            ),
+            child: const Text('로그아웃',
+                style: TextStyle(color: AppColors.meetoryPink)),
           ),
         ],
       ),
@@ -68,15 +63,12 @@ class ProfileScreen extends ConsumerWidget {
         content: const Text('정말 탈퇴하시겠어요?\n모든 데이터가 삭제됩니다.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('취소')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              '탈퇴',
-              style: TextStyle(color: AppColors.meetoryPink),
-            ),
+            child: const Text('탈퇴',
+                style: TextStyle(color: AppColors.meetoryPink)),
           ),
         ],
       ),
@@ -101,9 +93,8 @@ class ProfileScreen extends ConsumerWidget {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('탈퇴 실패: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('탈퇴 실패: $e')));
     }
   }
 
@@ -129,36 +120,36 @@ class ProfileScreen extends ConsumerWidget {
               label: '내 정보 수정',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const EditProfileScreen()),
               ),
             ),
+
             _MenuTile(
               icon: CupertinoIcons.heart,
               label: '관심사 재설정',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const SurveyQuestionsScreen(isEdit: true),
-                ),
+                    builder: (_) =>
+                    const SurveyQuestionsScreen(isEdit: true)),
               ),
             ),
+
             _MenuTile(
               icon: CupertinoIcons.bell,
               label: '알림 설정',
               onTap: () {},
             ),
+
             _MenuTile(
-              icon: Icons.block,
+              icon: Icons.block_flipped,
               label: '차단 관리',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const BlockedUsersScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const BlockedUsersScreen()),
               ),
-            ),
-            _MenuTile(
-              icon: CupertinoIcons.question_circle,
-              label: '이용 가이드',
-              onTap: () {},
             ),
 
             const Divider(height: 1),
@@ -169,6 +160,7 @@ class ProfileScreen extends ConsumerWidget {
               isDestructive: true,
               onTap: () => _logout(context, ref),
             ),
+
             _MenuTile(
               icon: CupertinoIcons.delete,
               label: '회원 탈퇴',
@@ -190,8 +182,8 @@ class ProfileScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.meetorySkyBlue.withOpacity(0.10),
-            AppColors.meetoryPink.withOpacity(0.06),
+            AppColors.meetorySkyBlue.withOpacity(0.1),
+            AppColors.meetoryPink.withOpacity(0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
@@ -204,12 +196,13 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(profile.nickname, style: AppTextStyles.headline2),
+                Text(profile.nickname,
+                    style: AppTextStyles.headline2),
                 if (profile.typeLabel != null)
-                  Text(
-                    profile.typeLabel!,
-                    style: TextStyle(color: AppColors.meetorySkyBlue),
-                  ),
+                  Text(profile.typeLabel!,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.meetorySkyBlue,
+                      )),
                 if (profile.mbti != null)
                   Text(profile.mbti!, style: AppTextStyles.caption),
               ],
@@ -238,15 +231,16 @@ class _MenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isDestructive
         ? AppColors.meetoryPink
-        : context.cs.onSurface.withOpacity(0.85);
+        : AppColors.meetoryNavy;
 
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(color: color)),
+      title: Text(label,
+          style: TextStyle(color: color)),
       trailing: isDestructive
           ? null
           : Icon(CupertinoIcons.chevron_right,
-          color: context.cs.onSurface.withOpacity(0.35)),
+          color: Colors.grey.withOpacity(0.5)),
       onTap: onTap,
     );
   }

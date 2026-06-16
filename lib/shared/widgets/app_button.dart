@@ -31,62 +31,56 @@ class AppButton extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
-            elevation: 0,
           ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, Colors.black),
+          child: _child(Colors.black),
         ),
 
         AppButtonVariant.google => OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(
-              color: context.cs.onSurface.withOpacity(0.15),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            side: BorderSide(color: AppColors.meetorySkyBlue.withOpacity(0.3)),
           ),
-          child: _buildChild(context, context.cs.onSurface),
+          onPressed: isLoading ? null : onPressed,
+          child: _child(AppColors.meetorySkyBlue),
         ),
 
         AppButtonVariant.outlined => OutlinedButton(
-          onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            side: BorderSide(
-              color: AppColors.meetorySkyBlue.withOpacity(0.45),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            side: BorderSide(color: AppColors.meetorySkyBlue.withOpacity(0.5)),
           ),
-          child: _buildChild(context, AppColors.meetorySkyBlue),
+          onPressed: isLoading ? null : onPressed,
+          child: _child(AppColors.meetorySkyBlue),
         ),
 
         AppButtonVariant.filled => FilledButton(
-          onPressed: isLoading ? null : onPressed,
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.meetorySkyBlue,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
             ),
           ),
-          child: _buildChild(context, Colors.white),
+          onPressed: isLoading ? null : onPressed,
+          child: _child(Colors.white),
         ),
       },
     );
   }
 
-  Widget _buildChild(BuildContext context, Color color) {
-    return isLoading
-        ? SizedBox(
-      width: 18,
-      height: 18,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-        color: color,
-      ),
-    )
-        : Text(label, style: AppTextStyles.button.copyWith(color: color));
+  Widget _child(Color color) {
+    if (isLoading) {
+      return SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: color,
+        ),
+      );
+    }
+
+    return Text(
+      label,
+      style: AppTextStyles.button.copyWith(color: color),
+    );
   }
 }
