@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import 'package:dio/dio.dart';
 
 class GroupSummary {
   final int id;
@@ -87,12 +88,18 @@ class GroupRepository {
   }
 
   Future<List<String>> getIcebreakers(int groupId) async {
-    final res = await ApiClient.dio.get('/api/groups/$groupId/icebreakers');
+    final res = await ApiClient.dio.get(
+        '/api/groups/$groupId/icebreakers',
+      options: Options(receiveTimeout: const Duration(seconds: 25)),
+    );
     return (res.data['icebreakers'] as List).map((e) => e.toString()).toList();
   }
 
   Future<String> getCoachTip(int groupId) async {
-    final res = await ApiClient.dio.post('/api/groups/$groupId/coach');
+    final res = await ApiClient.dio.post(
+      '/api/groups/$groupId/coach',
+      options: Options(receiveTimeout: const Duration(seconds: 25)),  // ← Gemini 느려도 기다림
+    );
     return res.data['tip'] as String? ?? '';
   }
 }
