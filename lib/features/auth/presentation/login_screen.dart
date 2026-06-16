@@ -62,58 +62,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 28.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
 
-              // Meetory Logo Icon
               Container(
-                width: 80, height: 80,
+                width: 60, height: 60,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      AppColors.meetoryPink,
-                      AppColors.meetorySkyBlue,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.cs.primary.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
+                  color: context.cs.primary,
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(CupertinoIcons.person_2_fill,
-                    color: Colors.white, size: 40),
+                    color: context.cs.onPrimary, size: 30),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
 
-              Text(
-                'Meetory',
-                style: AppTextStyles.headline1.copyWith(
-                  color: AppColors.meetoryNavy,
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '새로운 만남, 부담 없이',
-                style: AppTextStyles.title.copyWith(
-                  color: context.cs.onSurface.withOpacity(0.7),
-                ),
-              ),
-              const SizedBox(height: 24),
+              Text('새로운 만남,\n부담 없이', style: AppTextStyles.headline1),
+              const SizedBox(height: 14),
               Text(
                 'AI가 나와 잘 맞는 소규모 그룹을\n자동으로 연결해드려요.',
-                textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(
                     color: context.cs.onSurfaceVariant, height: 1.6),
               ),
 
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
 
               AppButton(
                 label: '카카오로 시작하기',
@@ -140,9 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: Text(
                   '로그인 시 서비스 이용약관 및\n개인정보처리방침에 동의하는 것으로 간주됩니다.',
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.caption.copyWith(
-                    color: context.cs.onSurface.withOpacity(0.5),
-                  ),
+                  style: AppTextStyles.caption,
                 ),
               ),
               const SizedBox(height: 24),
