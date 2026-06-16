@@ -6,9 +6,9 @@ class AppTheme {
   static ThemeData get lightTheme => _build(
     brightness: Brightness.light,
     scheme: const ColorScheme.light().copyWith(
-      primary: AppColors.meetoryNavy,
+      primary: AppColors.darkPrimarySoft2,
       onPrimary: AppColors.white,
-      secondary: AppColors.meetoryPink,
+      secondary: AppColors.darkPrimarySoft,
       onSecondary: AppColors.white,
       surface: AppColors.lightSurface,
       onSurface: AppColors.lightTextPrimary,
@@ -129,7 +129,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primary, width: 1.5)),
+            borderSide: BorderSide(color: primary.withOpacity(0.7), width: 1.2)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: TextStyle(color: hint),
       ),

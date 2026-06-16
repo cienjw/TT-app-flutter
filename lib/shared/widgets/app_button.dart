@@ -27,33 +27,60 @@ class AppButton extends StatelessWidget {
         AppButtonVariant.kakao => ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.kakaoYellow,
-            foregroundColor: Colors.black87,
+            foregroundColor: Colors.black,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-            elevation: 0,
+              borderRadius: BorderRadius.circular(14),
+            ),
           ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: Colors.black87),
+          child: _child(Colors.black),
         ),
+
         AppButtonVariant.google => OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppColors.meetorySkyBlue.withOpacity(0.3)),
+          ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.primary),
+          child: _child(AppColors.meetorySkyBlue),
         ),
+
         AppButtonVariant.outlined => OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppColors.meetorySkyBlue.withOpacity(0.5)),
+          ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.primary),
+          child: _child(AppColors.meetorySkyBlue),
         ),
+
         AppButtonVariant.filled => FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.meetorySkyBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
           onPressed: isLoading ? null : onPressed,
-          child: _buildChild(context, color: context.cs.onPrimary),
+          child: _child(Colors.white),
         ),
       },
     );
   }
 
-  Widget _buildChild(BuildContext context, {Color? color}) => isLoading
-      ? SizedBox(
-      width: 20, height: 20,
-      child: CircularProgressIndicator(strokeWidth: 2, color: color))
-      : Text(label, style: AppTextStyles.button.copyWith(color: color));
+  Widget _child(Color color) {
+    if (isLoading) {
+      return SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: color,
+        ),
+      );
+    }
+
+    return Text(
+      label,
+      style: AppTextStyles.button.copyWith(color: color),
+    );
+  }
 }
